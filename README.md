@@ -7,7 +7,7 @@ HTML and JavaScript without any dependencies.
 ## Interface
 
 All the code for the interface is contained in `TrACE.html`. You can just open
-the file in any browser, as long it has access to the data as described above.
+the file in any browser, as long it has access to the data as described below.
 
 Interface color and title can be changed by editing the values in the 
 TEMPLATE VARIABLES section at the top of the file. Values which may be of the
