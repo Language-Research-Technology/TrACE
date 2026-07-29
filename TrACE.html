@@ -1,0 +1,1078 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8"/>
+
+    <!-- TEMPLATE VARIABLES -- MAKE CHANGES TO THE VALUES AS NEEDED -->
+
+    <script>
+        // This is the string shown when you hover your mouse over the tab
+        // with this page open, when you add the page to bookmarks etc.
+        const pageTitle = "TrACE"
+
+        // This is the string shown at the top of webpage
+        const pageHeader = "Transcribed Audio Collection Explorer (TrACE)"
+
+        // This is the name of the TIER_ID associated with notes/remarks in 
+        // the annotations
+        const annNoteTier = "NOTE"
+    </script>
+
+    <style>
+        /* COLOR THEME  */
+        :root {
+            --primary-color: #228be6; /*#228be6;*/
+
+            /* Color for NOTE annotations. A mix with the primary color and 
+            black, to try and ensure that the text is not too light for
+            legibility */
+            --note-text-color: color-mix(in srgb, var(--primary-color) 80%, black);
+
+            /* By default, applies to left area, file and annotations buttons,
+            speaker cards. This is a mix of the primary color with off-white, to 
+            create a lightened version of the color. You can adjust the 
+            percentage to make the primary color more or less apparent 
+            in the mix */
+            --background-color: color-mix(in srgb, var(--primary-color) 4%, snow);
+
+            /* Background for speaker cards -- similar to the above, 
+            but darker*/
+            --card-background-color: color-mix(in srgb, var(--primary-color) 15%, snow);
+
+            /* Button state colors */
+            --active-file-color: color-mix(in srgb, var(--primary-color) 15%, snow);
+            --ann-highlight-color: #faffa1; /*Current annotation*/
+            --filter-match-color: #c2fad2;
+        }
+    </style>
+
+    <!-- END OF TEMPLATE VARIABLES -->
+
+    <style>
+        /* ---- HIGH-LEVEL STYLES ---- */
+
+        /* Force elements' total width and height to include content, padding, 
+        and borders */
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: sans-serif;
+            height: 100dvh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        #main {
+            display: flex;
+            flex-direction: row;
+            flex-grow: 1;
+            min-height: 0;
+        }
+
+        h2 {
+            text-align: center;
+            margin: 10px;
+        }
+
+        #left, #right {
+            display: flex;
+            flex-direction: column;
+            width: 50%;
+            padding: 1em;
+            overflow-y: auto;
+        }
+
+        #left {
+            background: var(--background-color);
+            border-right: 1px solid #ccc;
+            scrollbar-color: #888888 var(--background-color);
+        } 
+
+        /* Remove sticky/fixed positioning */
+        #leftHeader, #rightHeader {
+            position: static; /* no fixed header */
+            width: 100%;
+            padding: 0.5em 1em;
+            box-shadow: none; /* remove shadow */
+        }
+
+        #rightHeader {
+            height: auto; /* let content size itself */
+            border-bottom: 1px solid #ccc;
+        }
+
+        /* --- LOGOS --- */
+        #header {
+            border: 1px solid #ccc;
+            flex-shrink: 0;
+        }
+
+        .logo-grid {
+            padding: 0px 10px 10px; /* top, left/right, bottom */
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            align-items: center; /* Keeps horizontal/vertical alignment clean */
+            flex-wrap: wrap; /* Wraps to next line on mobile screen sizes */
+        }
+
+        .logo-card {
+            width: 100px; /* Give every logo container the same slot width */
+            height: 30px; /* Same for height */
+        }
+
+        .logo-card img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain; /* Sizes logo to fit the box without stretching */
+        }
+
+        .logo-text {
+            padding: 4px 6px;
+            border-radius: 0.5em;
+        }
+
+        .logo-text a {
+            text-decoration: none; /* No underline */
+            color: dimgray;
+            font-weight: bold;
+            font-size: small;
+            border-radius: 0.5em;
+        }
+
+        /* --- FILTER AND SEARCH AREA --- */
+
+        #filtersFold {
+            border: 1px solid;
+            border-color: var(--primary-color); 
+            border-radius: 10px; 
+            overflow: hidden; 
+        }
+
+        #filtersFoldHeader {
+            background-color: var(--primary-color); 
+            color: white; 
+            padding: 8px; 
+            font-weight: bold; 
+            cursor: pointer; 
+            user-select: none; 
+            font-size:small;
+        }
+
+        #filtersFoldBody {
+            display: block;
+            padding: 15px; 
+            background-color: #f8f9fa; 
+            color: #333;
+        }
+
+        /* --- BUTTONS --- */
+
+        button {
+            display: inline-block;
+            gap: 8px;
+            margin: 0.5em 0;
+            padding: 0.5em;
+            width: 100%;
+            text-align: left;
+            cursor: pointer;
+            border: 1px solid;
+            background-color: var(--background-color);
+        }
+
+        button.active-file {
+            display: inline-flex;
+            border: 2px outset;
+            background-color: var(--active-file-color);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            border-color: var(--primary-color);
+        }
+
+        button.active-file::before {
+            content: '';
+            top: 0;
+            bottom: 0;
+            left: 0;
+            width: 4px; /* Thin accent bar */
+            background-color: var(--primary-color);
+            border-top-left-radius: 5px;
+            border-bottom-left-radius: 5px;
+        }
+
+        /* Button highlights */
+        .highlight {
+            background-color: var(--ann-highlight-color);
+        }
+
+        .annotation-note {
+            color: var(--note-text-color);
+            font-weight: bold;
+        }
+
+        .disabled {
+            background-color: #eee;
+            color: #888;
+            cursor: not-allowed;
+        }
+
+        .search-match {
+            background-color: var(--filter-match-color);
+        }
+
+        /* --- AUDIO PLAYER --- */
+
+        #audioBox {
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Audio player spans full width */
+        #audio {
+            display: block;
+            width: 100%;
+            margin: 0 0 1em 0;
+            border: 1px solid var(--primary-color);
+            border-radius: 40px;
+        }
+
+        .audio-wrapper {
+            align-items: center;
+            width: 90%;
+        }
+
+        /* --- SPEAKER CARDS --- */
+
+        /* Speaker cards stay above annotations */
+        #speakerCards {
+            margin: 1em 0;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1em;
+        }
+
+        /* Annotations take remaining space and scroll */
+        .scrollBox {
+            flex: 1 1 auto;
+            overflow-y: auto;
+            padding: 0 1em;
+        }
+
+        .speaker-card {
+            flex: 1 1 30%;
+            border: 1px solid #ccc;
+            padding: 0.4em;
+            background: var(--card-background-color);
+            border-radius: 4px;
+            font-size: 1em; /* smaller text */
+            line-height: 1.2;
+        }
+
+        .speaker-card h3 {
+            margin: 0 0 0.2em 0;
+            font-size: 1em; /* slightly smaller heading */
+            line-height: 1.2;
+        }
+
+        .speaker-card .label {
+            font-weight: bold;
+            font-size: 0.9em; /* labels smaller but still distinct */
+        }
+
+        .speaker-card p {
+            margin: 0.2em 0;
+            font-weight: normal;
+            font-size: 0.9em; /* match card base size */
+            line-height: 1.2;
+        }
+
+        .search-container {
+            display: flex;
+            justify-content: space-between;
+            gap: 0.5em;
+            width: 100%;
+        }
+
+        /* --- FILTER AND SEARCH --- */
+
+        /* Container for the speaker name input field*/
+        #nameInput {
+            max-width: 350px;
+        }
+
+        /* Speaker name input field itself */
+        #speakerFilterBox {
+            flex: 1; /* stays on the right */
+        }
+
+        /* Container for the trasncript search field*/
+        #transcript-search-input {
+            width: 80%;
+        }
+
+        /* Transcript search field itself */
+        #searchBox {
+            flex: 1; /* stays on the left */
+            border: 1px solid;
+            border-color: var(--primary-color);
+        }
+
+        /* --- CLEARABLE INPUT FIELD --- */
+
+        .text-input-container {
+            position: relative;
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            gap: 16px;
+            padding: 6px;
+            border-radius: 4px;
+        }
+
+        .custom-text-input {
+            width: 100%;
+            min-height: 20px; 
+            border: 1px solid;
+            border-color: #ced4da;
+            border-radius: 4px;
+            padding: 6px 6px 6px 6px; /* Right padding leaves room for the clear button */
+            font-size: small;
+            outline: none;
+            background-color: #fff;
+        }
+
+        .custom-text-input:focus {
+            border: 1px solid var(--primary-color);
+        }
+
+        .clear-text-btn {
+            display: none; /* Hidden by default */
+            position: absolute;
+            right: 12px;
+            cursor: pointer;
+            font-size: 20px;
+            font-weight: bold;
+            color: #94a3b8;
+            user-select: none;
+            z-index: 5;
+        }
+
+        .clear-text-btn:hover {
+            color: #ef4444; /* Turns red on hover */
+        }
+
+        /* --- TAG PICKER CONTROL --- */
+        .tag-picker-group {
+            display: flex;
+            flex-direction: row; /* Puts label and chips on the same line */
+            align-items: baseline; /* Adjust by top border */
+            gap: 16px; /* Increase gap between label and chips */
+            font-family: sans-serif;
+            padding: 6px;
+        }
+
+        .tag-picker-label {
+            font-size: small;
+            font-weight: 600;
+            color: #333;
+            margin-top: 6px; /* Center label */
+            white-space: nowrap; /* Do not wrap the label itself */
+        }
+
+        .tag-picker-container {
+            display: flex;
+            flex-wrap: wrap; /* Allows chips to wrap onto a new line */
+            gap: 4px;
+        }
+
+        .chip {
+            padding: 2px 4px;
+            background-color: #f1f3f5;
+            border: 1px solid #ced4da;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: small;
+            user-select: none;
+            transition: all 0.2s ease;
+        }
+
+        .chip:hover {
+            background-color: #e9ecef;
+        }
+
+        .chip.selected {
+            background-color: var(--primary-color);
+            color: #ffffff;
+            border-color: var(--primary-color);
+        }
+    </style>
+</head>
+<body>
+
+<div id="header">
+    <h2 id="topHeader"></h2>
+	<!-- You can put logos here 
+    <div class="logo-grid">
+        <div class="logo-card"> 
+			<!~~IMAGE BASED LOGOS, FOR EXAMPLE~~>
+		    <a href="PUT_URL_OF_A_PAGE_HERE" target="_blank">
+                <img src="PATH_TO_IMAGE" alt="ANU logo">
+            </a>
+        </div>
+        <div class="logo-text">
+			<!~~TEXT BASED LOGOS, FOR EXAMPLE~~>
+            <a href="PUT_URL_OF_A_PAGE_HERE" target="_blank">
+                LOGO TEXT TO DISPLAY
+            </a>
+        </div>
+    </div>
+	-->
+</div>  
+
+<div id="main">
+    <div id="left">
+        <div id="leftHeader">
+            <details id="filtersFold">
+                <summary id="filtersFoldHeader">
+                    Filter recordings
+                </summary>
+                <div id="filtersFoldBody" class="search-container">
+                    <div class="text-input-container" id="nameInput">
+                        <label class="tag-picker-label">Name:</label>
+                        <input type="text" class="custom-text-input"
+                            id="speakerFilterBox">
+                        <div class="clear-text-btn" id="clearNameFilterBtn" title="Clear text">&times;</div>
+                    </div>
+                </div>
+            </details>
+            <br>
+            <div class="search-container">
+                <div class="text-input-container" id="transcript-search-input">
+                    <input type="text" class="custom-text-input" placeholder="Search interview content..." id="searchBox">
+                    <div class="clear-text-btn" id="clearSearchBtn" title="Clear text">&times;</div>
+                </div>
+            </div>
+        </div>
+        <br>
+        <div class="scrollBox" id="searchArea">
+            <div id="speakerSearchResults"></div>
+            <div id="searchResults"></div>
+            <div id="fileList"></div>
+        </div>
+    </div>
+
+    <div id="right">
+        <div id="rightHeader">
+            <div id="audioBox">
+                <audio id="audio" controls></audio> 
+            </div>
+            
+            <div id="speakerCards"></div>
+        </div>
+
+        <div class="scrollBox" id="annotations"></div>
+    </div>
+</div>
+
+
+
+<!-- Load data files -->
+<script src="transcripts.js"></script>
+<script src="speakers.js"></script>
+
+<!-- Interface logic -->
+<script>
+    // ==========================================
+    // INPUT CONTROLS CLASSES
+    // ==========================================
+
+    // A text input which can be cleared with an X button 
+    class ClearableTextInput {
+        // 1. Accept an optional callback function
+        constructor(inputElementId, clearBtnId, onChangeCallback = null) {
+            this.input = document.getElementById(inputElementId);
+            this.clearBtn = document.getElementById(clearBtnId);
+            this.onChangeCallback = onChangeCallback; // Save reference
+
+            this.init();
+        }
+
+        init() {
+            this.input.addEventListener('input', () => {
+                this.clearBtn.style.display = this.input.value.length > 0 ? 'block' : 'none';
+
+                // 2. Trigger callback on input changes (typing/deleting)
+                this.triggerCallback();
+            });
+
+            this.clearBtn.addEventListener('click', () => {
+                this.input.value = '';
+                this.clearBtn.style.display = 'none';
+                this.input.focus();
+
+                // 3. Trigger callback when the clear button resets the field
+                this.triggerCallback();
+            });
+        }
+
+        getValue() {
+            return this.input.value.trim();
+        }
+
+        // Helper method to safely fire the callback if it exists
+        triggerCallback() {
+            if (typeof this.onChangeCallback === 'function') {
+                this.onChangeCallback(this.getValue());
+            }
+        }
+    }
+
+    class TagPicker {
+        // 1. Accept onChangeCallback in the constructor
+        constructor(containerId, optionsList, onChangeCallback = null) {
+            this.container = document.getElementById(containerId);
+            this.options = optionsList;
+            this.selected = new Set();
+            this.onChangeCallback = onChangeCallback; // Store callback function
+            
+            this.render();
+        }
+
+        render() {
+            this.container.innerHTML = '';
+            
+            this.options.forEach(tag => {
+                const chip = document.createElement('div');
+                chip.className = 'chip';
+                chip.textContent = tag;
+                
+                chip.addEventListener('click', () => this.toggleTag(tag, chip));
+                
+                this.container.appendChild(chip);
+            });
+        }
+
+        toggleTag(tag, element) {
+            let action = '';
+            
+            if (this.selected.has(tag)) {
+                this.selected.delete(tag);
+                element.classList.remove('selected');
+                action = 'deselected';
+            } else {
+                this.selected.add(tag);
+                element.classList.add('selected');
+                action = 'selected';
+            }
+            
+            // 2. Fire the callback and pass relevant information
+            if (this.onChangeCallback) {
+                this.onChangeCallback({
+                    action: action,             // 'selected' or 'deselected'
+                    changedTag: tag,            // The specific tag that changed
+                    currentSelection: this.getSelected() // The entire updated list
+                });
+            }
+        }
+
+        getSelected() {
+            return Array.from(this.selected);
+        }
+    }
+    
+    // A class for an object to hold global app state
+    class appState extends EventTarget {
+        #state = {};
+        
+        constructor() {
+            super();
+            
+            this.#state = {
+                activeRecordingName: null,
+                prevRecordingButton: null,
+                activeRecordingButton: null,
+                currentTranscript: null,
+                currentAudio: null,
+                annotationButtons: []
+            }
+        }
+
+        getState = function() {
+            return this.#state
+        }
+
+        setCurrentRecording = function(recordingName) {
+            const currentTranscript = findTranscript(recordingName);
+            const currentButton = findRecordingButton(recordingName);
+
+            this.#state.activeRecordingName = recordingName;
+            // Remember which button was just active to deactivate it
+            this.#state.prevRecordingButton = this.#state.activeRecordingButton
+            // Record the new active button
+            this.#state.activeRecordingButton = currentButton;
+            this.#state.currentTranscript = currentTranscript;
+            this.#state.currentAudio = currentTranscript.filename;
+            this.updateAnnotationButtons()
+
+            // Create a custom event
+            const event = new CustomEvent('recordingChange', { 
+                detail: this.getState() 
+            });
+            
+            // Broadcast the event to all listeners
+            this.dispatchEvent(event);
+        }
+
+        // Create annotation buttons -- this function will execute when a 
+        // recording is changed, and the global state object is updated
+        updateAnnotationButtons = function() {
+            this.#state.annotationButtons = [];
+
+            // Create a new set of annotation chips
+
+            // Make sure that annotations are sorted in increasing order by
+            // timestamps
+            const sortedAnnotations = this.#state.currentTranscript.annotations
+                                        .sort((a, b) => a.start - b.start);
+
+            sortedAnnotations.forEach((ann, index) => {
+                const tierId = ann.TIER_ID;
+
+                const btn = document.createElement('button');
+                btn.innerHTML = `<strong>${tierId}:</strong> ${ann.content}`;
+                btn.dataset.start = ann.start;
+                btn.dataset.end = ann.end;
+                btn.dataset.index = index;
+
+                // Allow styling of notes in the annotations
+                if (tierId === annNoteTier) {
+                    btn.classList.add("annotation-note")
+                }
+
+                btn.onclick = () => {
+                    audio.currentTime = ann.start / 1000;
+                    audio.play();
+                    setTimeout(() => {
+                        btn.scrollIntoView({behavior: 'smooth', block: 'center'});
+                        btn.classList.add('highlight');
+                    }, 200);
+                };
+
+                this.#state.annotationButtons.push(btn);
+            });
+        }
+    } 
+
+    // ==========================================
+    // Functions
+    // ==========================================
+
+    /**
+     * Converts a string to a safe HTML name
+     *
+     * @param {String} str - input string.
+     * @returns {String} Sanitized string.
+     */
+    function toSafeHtmlName(str) {
+        return str
+            .trim()                       // Remove leading/trailing whitespace
+            .toLowerCase()                // Enforce lowercase
+            .replace(/[^a-z0-9-_]/g, '-') // Replace illegal characters with a hyphen
+            .replace(/-+/g, '-')          // Collapse consecutive hyphens
+            .replace(/^-+|-+$/g, '');     // Remove leading/trailing hyphens
+    };
+
+    /**
+     * Find transcript by the recording's name 
+     *
+     * @param {String} recordingName - Name of the recording as displayed on 
+     *   the recording button. 
+     */
+    // 
+    function findTranscript(recordingName) {
+        // We are guaranteed that there will be a match: recordingName will
+        // come from a file button, and all file buttons are created based on
+        // transcripts.
+        return transcripts.find(t => t.displayName == recordingName)
+    }
+
+    /**
+     * Find recording button by recording's name
+     *
+     * @param {String} recordingName - Name of the recording as displayed on 
+     *   the recording button. 
+     * @returns {Element} Button associated with this recording
+     */
+    function findRecordingButton(recordingName) {
+        return fileButtons.find(btn => btn.textContent === recordingName)
+    }
+
+    /**
+     * Filters file list depending on the values in filter inputs
+     */
+    function filterFileList() {
+
+        const filtersSelected = Object.fromEntries(
+            Object.entries(tagPickers).map(([key, value]) => {
+                return [key, value.getSelected()];
+            })
+        );
+
+        const queries = Object.fromEntries(
+            Object.entries(filtersSelected).map(([key, value]) => {
+                if (filtersSelected[key].length !== 0) {
+                    return [key, filtersSelected[key]]
+                } else {
+                    return [key, speakersAttrs[key]]
+                }
+            })
+        );
+
+        const nameQuery = speakerFilterBox.getValue().toLowerCase();
+
+        let numberMatchingRecordings = 0;
+
+        filteredData = [];
+
+        fileButtons.forEach(btn => {
+            const file = findTranscript(btn.textContent)
+  
+            // Check if this file contains a matching speaker
+            const matchedSpeakers = speakers.filter(sp => {
+                const queryMatches = Object.entries(queries).map(([key, value]) => {
+                    // Test for values followed by ";" or end of line, to 
+                    // make sure that in attributes with multiple values only
+                    // the entire values produce the match
+                    //
+                    // E.g., that with values like "test;test2" choosing "test"
+                    // as the query doesn't select items which only have "test2"
+                    const regex = value.map(v => new RegExp(`(^|;)${RegExp.escape(v)}(;|$)`))
+                    return regex.some(re => re.test(sp[key]));
+                })
+
+                allQueriesMatch = queryMatches.every(q => q === true)
+
+                return allQueriesMatch &&
+                    sp.Name.toLowerCase().includes(nameQuery) &&
+                    file.displayName.toLowerCase().includes(sp.Name.toLowerCase());
+            });
+
+            //If no filter terms are entered, remove filter-related styles
+            if (Object.values(filtersSelected).every(val => val.length === 0) && 
+                nameQuery.length === 0) {
+                    btn.classList.remove('search-match');
+                    btn.disabled = false;
+                    filteredData = transcripts;
+                    numberMatchingRecordings = -1;
+            } else { // If the user specified filter terms...
+                if (matchedSpeakers.length === 0) { // Style and disable unmatched recordings
+                    btn.classList.remove('search-match');
+                    btn.disabled = true;
+                } else { // Style and enable matched recordings
+                    btn.classList.add('search-match');
+                    btn.disabled = false;
+                    filteredData.push(file);
+                    numberMatchingRecordings = numberMatchingRecordings + 1;
+                }
+            }
+        });
+
+        if (numberMatchingRecordings === -1){
+            filtersFoldHeader.innerHTML = `Filter recordings`;
+        } else {
+            filtersFoldHeader.innerHTML = `Filter recordings (${numberMatchingRecordings} found)`;
+        }
+        
+        // Simulate input to the search box, so that the search function is
+        // run and the results are updated. This is needed when the search
+        // terms are entered first, and only then some filter are applied
+        searchBox.triggerCallback()
+    }
+
+    /**
+     * Searches transcripts depending on the query in the search fields
+     * @param {String} value - search string
+     */
+    function searchAnnotations(value) {
+        const state = store.getState();
+        const query = searchBox.getValue().toLowerCase();
+        searchResults.innerHTML = '';
+        if (!query) {
+            // If the search box is empty, show file list again
+            fileList.style.display = 'block';
+            return;
+        }
+
+        filteredData.forEach(file => {
+            const fileMatches = [];
+
+            // --- Check annotations ---
+            file.annotations.forEach(ann => {
+                const contentLower = ann.content.toLowerCase();
+                if (contentLower.includes(query)) {
+                    const regex = new RegExp(`(${query})`, 'gi');
+                    const highlighted = ann.content.replace(regex, '<span class="highlight">$1</span>');
+
+                    const snippetBtn = document.createElement('button');
+                    snippetBtn.innerHTML = `<strong>${ann.TIER_ID}:</strong> ${highlighted}`;
+
+                    snippetBtn.onclick = () => {
+                        store.setCurrentRecording(file.displayName);
+
+                        audio.currentTime = ann.start / 1000;
+                        audio.play();
+
+                        setTimeout(() => {
+                            const targetBtn = state.annotationButtons.find(
+                                b => parseInt(b.dataset.start) === ann.start
+                            );
+                            if (targetBtn) {
+                                targetBtn.scrollIntoView({behavior: 'smooth', block: 'center'});
+                                targetBtn.classList.add('highlight');
+                            }
+                        }, 200);
+                    };
+
+                    fileMatches.push(snippetBtn);
+                }
+            });
+
+            // --- Render results ---
+            if (fileMatches.length > 0) {
+                const fileHeader = document.createElement('h3');
+                fileHeader.textContent = file.displayName;
+                searchResults.appendChild(fileHeader);
+                fileMatches.forEach(btn => searchResults.appendChild(btn));
+                // Hide file list buttons -- only search results will be shown
+                // if search returned any results
+                fileList.style.display = "none";
+            } 
+        });
+
+        if (searchResults.innerHTML === ''){
+            const noResults = document.createElement('h3');
+            noResults.textContent = "No search match found";
+            searchResults.appendChild(noResults);
+        }
+    };
+
+    /**
+     * Loads recording using the info in the global state object
+     * 
+     * The function loads the audio file, creates speaker cards, displays
+     * associated transcripts
+     */
+    function loadFile() {
+        const state = store.getState()
+
+        audio.src = state.currentAudio;
+
+        audio.play();
+        createSpeakerCards();
+        displayAnnotations();
+    }
+
+    /**
+     * Creates cards with speaker info
+     */
+    function createSpeakerCards() {
+
+        const state = store.getState()
+
+        const speakerCardsDiv = document.getElementById('speakerCards');
+        if (speakerCardsDiv) speakerCardsDiv.innerHTML = '';
+        
+        // --- SPEAKER CARDS ---
+        const matchedSpeakers = speakers.filter(s => {
+            const fullName = s.Name.toLowerCase();
+            return state.activeRecordingName.toLowerCase().includes(fullName);
+        });
+
+        matchedSpeakers.forEach(match => {           
+            const card = document.createElement('div');
+            card.className = 'speaker-card';
+            card.innerHTML = `<h3>${match.Name}</h3>`;
+            for (const [key, value] of Object.entries(match)) {
+                // For values, we treat ";" as separator, which for presentation
+                // purposes is replaced with ", "
+                card.innerHTML = card.innerHTML + `<p><span class="label">${key}:</span> ${value.replace(";", ", ")}</p>`
+            }
+            speakerCardsDiv.appendChild(card);
+        });
+    }
+
+    /**
+     * Displays annotations stored in the global app state object
+     */
+    function displayAnnotations() {
+        const state = store.getState();
+        annotationsDiv.innerHTML = '';
+
+        state.annotationButtons.forEach(btn => {
+            annotationsDiv.appendChild(btn);
+        })
+        // Scroll to the top of the annotations list
+        annotationsDiv.scrollTo({top: 0, behavior: 'smooth'});
+    }
+
+    /**
+     * Process changes when a different recording is selected
+     * 
+     * @param {Event} event Event triggered when the recording is updated
+     */
+    function handleRecordingUpdate(event) {
+        const state = event.detail; 
+
+        if (state.prevRecordingButton !== null) {
+            state.prevRecordingButton.classList.remove('active-file');
+        }
+        
+        state.activeRecordingButton.classList.add('active-file');
+        loadFile(state.currentTranscript)
+    }
+
+    // ==========================================
+    // Initialization
+    // ==========================================
+
+    // Set template values -- page title and top header
+    document.title = pageTitle;
+    const topHeader = document.getElementById('topHeader');
+    topHeader.innerHTML = pageHeader;
+
+    // Create an overall object to keep track of the currently active recording
+    const store = new appState();
+    store.addEventListener('recordingChange', handleRecordingUpdate);
+
+    // Create a few accessors for the necessary UI elements ----
+    const annotationsDiv = document.getElementById('annotations');
+    const searchResults = document.getElementById('searchResults');
+    const filtersFoldHeader = document.getElementById('filtersFoldHeader');
+    const filtersFoldBody = document.getElementById('filtersFoldBody');
+    const fileList = document.getElementById('fileList');
+    const audio = document.getElementById('audio');
+
+    // Instantiate custom controls ----
+    const searchBox = new ClearableTextInput('searchBox', 'clearSearchBtn', 
+                                             searchAnnotations);
+    const speakerFilterBox = new ClearableTextInput('speakerFilterBox', 
+                                                    'clearNameFilterBtn', 
+                                                    filterFileList);
+
+    // Create recording buttons ----
+    const fileButtons = [];
+
+    transcripts.forEach(file => {
+        const btn = document.createElement('button');
+        btn.textContent = file.displayName;
+
+        btn.onclick = () => {
+            store.setCurrentRecording(file.displayName)
+        };
+
+        fileList.appendChild(btn);
+        fileButtons.push(btn);
+    });
+
+    // Create filters ----
+
+    // Create lists of filter values
+    const speakersAttrs = Object.fromEntries(
+        // Assume that all speakers have the same list of attributes, so we can 
+        // grab them from the first speakers
+        Object.keys(speakers[0]).map(key => {
+            let valuesList = [...new Set(speakers.map(item => item[key]))].sort();
+            // Split by ";" it the values contain sub-values (we assume ";" as
+            // the separator for sub-values)
+            valuesList = [... new Set(valuesList.flatMap(v => v.split(";")))];
+            // Put the "Not recorded" value last
+            if (valuesList.includes("Not recorded")) {
+                valuesList = [...valuesList.filter(item => item !== "Not recorded"), "Not recorded"];
+            };
+
+            return [key, valuesList];
+        })
+    );
+    
+    // Initialize tag pickers for each filter
+    const tagPickers = Object.fromEntries(
+        Object.entries(speakersAttrs)
+            .filter(([key, value]) => key !== "Name")
+            .map(([key, value]) => {
+            
+                if (key == "Name") return [];
+                
+                const newPickerDiv = document.createElement("div");
+                newPickerDiv.classList.add("tag-picker-group");
+                
+                const newPickerLabel = document.createElement("div");
+                newPickerLabel.classList.add("tag-picker-label");
+                newPickerLabel.innerHTML = key + ":"
+                
+                const newPicker = document.createElement("div");
+                newPicker.classList.add("tag-picker-container");
+                newPicker.id = toSafeHtmlName(key) + "-picker";
+                
+                newPickerDiv.append(newPickerLabel, newPicker);
+                filtersFoldBody.append(newPickerDiv);
+                
+                return [key, new TagPicker(newPicker.id, value, filterFileList)];
+            })
+    );
+
+    // Auxiliary data variables to use in searching and filtering
+    var filteredData = transcripts;
+
+    // ==========================================
+    // Event listeners
+    // ==========================================
+
+    // Note that some event listeners are instantiated as part of input
+    // controls creations
+
+    // --- Highlight current line during playback ---
+    audio.addEventListener('timeupdate', () => {
+        const state = store.getState()
+
+        const currentTime = audio.currentTime * 1000;
+        state.annotationButtons.forEach(btn => {
+            const start = parseInt(btn.dataset.start);
+            const end = parseInt(btn.dataset.end);
+            if (currentTime >= start && currentTime <= end) {
+                btn.classList.add('highlight');
+            } else {
+                btn.classList.remove('highlight');
+            }
+        });
+    });
+
+    // --- Scroll to annotation if the user advanced the time manually ---
+    //
+    // I.e., if the user clicked on the audio control and changed to a 
+    // different playback position
+    audio.addEventListener('seeked', () => {
+        const state = store.getState()
+
+        const currentTime = audio.currentTime * 1000;
+
+        const closest_annotation = state.annotationButtons.find(btn => {
+            const start = parseInt(btn.dataset.start);
+            const end = parseInt(btn.dataset.end);
+            if (currentTime >= start && currentTime <= end) {
+                return(true)
+            }  else {
+                return(false)
+            }
+        }
+        )
+
+        closest_annotation.scrollIntoView({behavior: 'smooth', block: 'center'})
+    });
+
+</script>
+
+</body>
+</html>
