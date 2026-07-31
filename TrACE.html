@@ -212,10 +212,14 @@
             font-weight: bold;
         }
 
-        .disabled {
+        button:disabled {
             background-color: #eee;
             color: #888;
-            cursor: not-allowed;
+            cursor: not-allowed !important;
+        }
+        
+        button:disabled * {
+            cursor: not-allowed !important;
         }
 
         .search-match {
