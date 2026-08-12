@@ -21,7 +21,7 @@
     <style>
         /* COLOR THEME  */
         :root {
-            --primary-color: #228be6; /*#228be6;*/
+            --primary-color: #228be6;
 
             /* Color for NOTE annotations. A mix with the primary color and 
             black, to try and ensure that the text is not too light for
@@ -39,9 +39,13 @@
             but darker*/
             --card-background-color: color-mix(in srgb, var(--primary-color) 15%, snow);
 
-            /* Button state colors */
+            /* --- Button state colors --- */
+
+            /* Currently selected recording */
             --active-file-color: color-mix(in srgb, var(--primary-color) 15%, snow);
-            --ann-highlight-color: #faffa1; /*Current annotation*/
+            /* Currently playing annotation */
+            --ann-highlight-color: #faffa1; 
+            /* Recordings matching the current set of filters */
             --filter-match-color: #c2fad2;
         }
     </style>
