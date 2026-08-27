@@ -1051,6 +1051,11 @@
             const end = parseInt(btn.dataset.end);
             if (currentTime >= start && currentTime <= end) {
                 btn.classList.add('highlight');
+                // Auto-scroll if the currently playing annotation reaches
+                // the end of the screen
+                if (btn.getBoundingClientRect().bottom > annotationsDiv.getBoundingClientRect().bottom) {
+                    btn.scrollIntoView({behavior: 'smooth', block: 'center'})
+                };
             } else {
                 btn.classList.remove('highlight');
             }
