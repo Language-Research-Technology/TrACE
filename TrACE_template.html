@@ -27,6 +27,7 @@
             black, to try and ensure that the text is not too light for
             legibility */
             --note-text-color: color-mix(in srgb, var(--primary-color) 80%, black);
+            --placeholder-color: color-mix(in srgb, var(--primary-color) 60%, black);
 
             /* By default, applies to left area, file and annotations buttons,
             speaker cards. This is a mix of the primary color with off-white, to 
@@ -42,7 +43,7 @@
             /* --- Button state colors --- */
 
             /* Currently selected recording */
-            --active-file-color: color-mix(in srgb, var(--primary-color) 15%, snow);
+            --active-file-color: color-mix(in srgb, var(--primary-color) 8%, snow);
             /* Currently playing annotation */
             --ann-highlight-color: #faffa1; 
             /* Recordings matching the current set of filters */
@@ -145,32 +146,6 @@
             font-weight: bold;
             font-size: small;
             border-radius: 0.5em;
-        }
-
-        /* --- FILTER AND SEARCH AREA --- */
-
-        #filtersFold {
-            border: 1px solid;
-            border-color: var(--primary-color); 
-            border-radius: 10px; 
-            overflow: hidden; 
-        }
-
-        #filtersFoldHeader {
-            background-color: var(--primary-color); 
-            color: white; 
-            padding: 8px; 
-            font-weight: bold; 
-            cursor: pointer; 
-            user-select: none; 
-            font-size:small;
-        }
-
-        #filtersFoldBody {
-            display: block;
-            padding: 15px; 
-            background-color: #f8f9fa; 
-            color: #333;
         }
 
         /* --- BUTTONS --- */
@@ -298,8 +273,47 @@
 
         .search-container {
             display: flex;
+            flex-direction: column; 
+            gap: 12px;             
+            padding: 6px;
+            width: 100%;
+        }
+
+        /* --- FILTER AND SEARCH AREA --- */
+
+        #filtersBox {
+            border: 2px solid var(--primary-color);  
+            background-color: var(--card-background-color); 
+            border-radius: 6px;  
+            position: relative;
+        }
+
+        #filtersBoxHeader {
+            display: flex;
             justify-content: space-between;
-            gap: 0.5em;
+            background-color: var(--primary-color); 
+            padding: 8px; 
+            user-select: none; 
+            border-top-left-radius: 4px;  
+            border-top-right-radius: 4px; 
+            color: white;
+            font-weight: bold; 
+            font-size: medium;
+        }
+
+        #filtersBoxBody {
+            display: block;
+            background-color: var(--primary-color); 
+            color: #333;  
+            box-sizing: border-box;
+        }
+
+        .filter-buttons-row {
+            display: flex;
+            flex-wrap: wrap; 
+            /* 0px vertical gap helps to avoid increased vertical space when 
+            buttons wrap onto the next line */
+            gap: 0px 8px; 
             width: 100%;
         }
 
@@ -313,6 +327,7 @@
         /* Speaker name input field itself */
         #speakerFilterBox {
             flex: 1; /* stays on the right */
+            margin-bottom: 6px;
         }
 
         /* Container for the trasncript search field*/
@@ -323,9 +338,8 @@
         /* Transcript search field itself */
         #searchBox {
             flex: 1; /* stays on the left */
-            border: 1px solid;
-            border-color: var(--primary-color);
-        }
+            margin: 6px 0px;
+        }   
 
         /* --- CLEARABLE INPUT FIELD --- */
 
@@ -336,7 +350,7 @@
             flex-direction: row;
             align-items: center;
             gap: 16px;
-            padding: 6px;
+            /* padding: 6px; */
             border-radius: 4px;
         }
 
@@ -356,6 +370,11 @@
             border: 1px solid var(--primary-color);
         }
 
+        .custom-text-input::placeholder {
+            color: var(--placeholder-color); /* Replace with your color */
+            opacity: 1;    /* Overrides Firefox's default opacity */
+        }   
+
         .clear-text-btn {
             display: none; /* Hidden by default */
             position: absolute;
@@ -373,31 +392,71 @@
         }
 
         /* --- TAG PICKER CONTROL --- */
-        .tag-picker-group {
-            display: flex;
-            flex-direction: row; /* Puts label and chips on the same line */
-            align-items: baseline; /* Adjust by top border */
-            gap: 16px; /* Increase gap between label and chips */
-            font-family: sans-serif;
-            padding: 6px;
+        .tag-picker-btn-container {
+            position: relative; 
+            display: inline-block;
+            min-width: 0; /* Allow the button to shrink for ellipsis */
+            max-width: 100%;    
+            white-space: nowrap;
+            flex-shrink: 1;  
         }
 
-        .tag-picker-label {
+        .tag-picker-btn {
+            position: relative;
             font-size: small;
             font-weight: 600;
-            color: #333;
-            margin-top: 6px; /* Center label */
-            white-space: nowrap; /* Do not wrap the label itself */
+            color: var(--placeholder-color);
+            background: #ffffff;
+            border: 1px solid var(--primary-color);
+            border-radius: 6px;
+            padding: 6px 12px;
+            cursor: pointer;
+            white-space: nowrap;
+            user-select: none;
+            transition: background-color 0.2s; 
+            /* Handling overflow when many filter options are selected and the
+            button text becomes too long */
+            max-width: 100%;          
+            overflow: hidden;         
+            text-overflow: ellipsis;   
+            box-sizing: border-box; /* Include padding into width calculation */
         }
 
-        .tag-picker-container {
+        /* Change background color when filter options are selected */
+        .tag-picker-btn.filtered {
+            background: var(--filter-match-color); 
+            padding-right: 28px; /* Space for the Clear cross button */
+        }
+
+        .tag-picker-btn:hover {
+            filter: brightness(0.97);
+        }
+
+        /* Hidden window with filter options */
+        .tag-picker-dropdown {
+            display: none; 
+            position: fixed; 
+            margin-top: 4px;
+            background-color: #ffffff;
+            border: 1px solid #ced4da;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            padding: 12px; 
+            gap: 6px;
+            z-index: 1000;
+            flex-wrap: wrap; 
+            min-width: 100px;
+            max-width: 260px; 
+            box-sizing: border-box; 
+        }
+
+        /* Show the hidden window when it has the class 'open' */
+        .tag-picker-dropdown.open {
             display: flex;
-            flex-wrap: wrap; /* Allows chips to wrap onto a new line */
-            gap: 4px;
         }
 
         .chip {
-            padding: 2px 4px;
+            padding: 4px 8px;
             background-color: #f1f3f5;
             border: 1px solid #ced4da;
             border-radius: 20px;
@@ -416,6 +475,43 @@
             color: #ffffff;
             border-color: var(--primary-color);
         }
+
+        /* Small clear button (cross) within a tag picker */
+        .tag-picker-inner-clear {
+            position: absolute;
+            right: 8px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-family: Arial, sans-serif;
+            font-size: 11px;
+            /* Simulate bold */
+            text-shadow: 
+                0.5px 0 0 currentColor, 
+                -0.5px 0 0 currentColor, 
+                0 0.5px 0 currentColor, 
+                0 -0.5px 0 currentColor;
+            color: #94a3b8;;
+            cursor: pointer;
+            user-select: none;
+            transition: color 0.15s ease;
+        }
+
+        .tag-picker-inner-clear:hover {
+            color: #ef4444;
+        }
+
+        /* --- GLOBAL "CLEAR ALL" BUTTON --- */ 
+        /* Most of the styling for this comes from .tag-picker-btn */
+        #clearAllBtn {
+            color: #ef4444; 
+        }
+
+        #clearAllBtn:hover {
+            color: #dc2626;
+            background-color: #ffeded;
+            filter: brightness(1); /* Undo parent style*/
+        }
+
     </style>
 </head>
 <body>
@@ -442,30 +538,36 @@
 
 <div id="main">
     <div id="left">
-        <div id="leftHeader">
-            <details id="filtersFold">
-                <summary id="filtersFoldHeader">
+        <!-- <div id="leftHeader">
+        </div> -->
+        <div class="scrollBox" id="searchArea">
+            <div id="filtersBox">
+                <div id="filtersBoxHeader">
                     Filter recordings
-                </summary>
-                <div id="filtersFoldBody" class="search-container">
+                </div>
+                <div id="filtersBoxBody" class="search-container">
                     <div class="text-input-container" id="nameInput">
-                        <label class="tag-picker-label">Name:</label>
-                        <input type="text" class="custom-text-input"
+                        <!-- <label class="label">Name:</label> -->
+                        <input type="text" class="custom-text-input" placeholder="Filter by recording name..."
                             id="speakerFilterBox">
                         <div class="clear-text-btn" id="clearNameFilterBtn" title="Clear text">&times;</div>
+                    </div> 
+                    <div class="filter-buttons-row">
+                        <div id="clearAllBtnContainer" class="tag-picker-btn-container">
+                        <button id="clearAllBtn" class="tag-picker-btn">
+                            Clear all
+                        </button>
+                    </div>
                     </div>
                 </div>
-            </details>
-            <br>
-            <div class="search-container">
-                <div class="text-input-container" id="transcript-search-input">
-                    <input type="text" class="custom-text-input" placeholder="Search interview content..." id="searchBox">
-                    <div class="clear-text-btn" id="clearSearchBtn" title="Clear text">&times;</div>
+                <div class="search-container">
+                    <div class="text-input-container" id="transcript-search-input">
+                        <input type="text" class="custom-text-input" placeholder="Search interview content..." id="searchBox">
+                        <div class="clear-text-btn" id="clearSearchBtn" title="Clear text">&times;</div>
+                    </div>
                 </div>
             </div>
-        </div>
-        <br>
-        <div class="scrollBox" id="searchArea">
+            <br>
             <div id="speakerSearchResults"></div>
             <div id="searchResults"></div>
             <div id="fileList"></div>
@@ -476,11 +578,10 @@
         <div id="rightHeader">
             <div id="audioBox">
                 <audio id="audio" controls></audio> 
-            </div>
-            
-            <div id="speakerCards"></div>
+            </div>  
         </div>
 
+        <div id="speakerCards"></div>
         <div class="scrollBox" id="annotations"></div>
     </div>
 </div>
@@ -539,25 +640,102 @@
     }
 
     class TagPicker {
-        // 1. Accept onChangeCallback in the constructor
-        constructor(containerId, optionsList, onChangeCallback = null) {
-            this.container = document.getElementById(containerId);
+        constructor(containerId, defaultLabel, optionsList, onChangeCallback = null) {
+            this.rootContainer = document.getElementById(containerId);
+            if (!this.rootContainer) return;
+
+            this.defaultLabel = defaultLabel; 
             this.options = optionsList;
             this.selected = new Set();
-            this.onChangeCallback = onChangeCallback; // Store callback function
+            this.onChangeCallback = onChangeCallback;
             
-            this.render();
+            // Generate HTML structure
+            this.buildStructure();
+
+            this.initEvents();
+            this.renderChips();
+            this.updateLabelText();
         }
 
-        render() {
+        // Function to generate HTML structure
+        buildStructure() {
+            this.rootContainer.classList.add('tag-picker-btn-container');
+
+            // Filter button
+            this.label = document.createElement('button');
+            this.label.type = 'button';
+            this.label.className = 'tag-picker-btn';
+            
+            // Hidden container for filter options, to be shown when the
+            // user clicks on the button
+            this.container = document.createElement('div');
+            this.container.className = 'tag-picker-dropdown';
+
+            this.innerClearBtn = document.createElement('span');
+            this.innerClearBtn.className = 'tag-picker-inner-clear';
+            this.innerClearBtn.innerHTML = '&#10005;'; // Символ крестика
+            this.innerClearBtn.title = 'Clear filter';
+
+            this.rootContainer.appendChild(this.label);
+            this.rootContainer.appendChild(this.container);
+            this.label.appendChild(this.innerClearBtn);
+        }
+
+        initEvents() {
+            this.label.addEventListener('click', (e) => {
+                e.stopPropagation();
+                
+                // Close options for any filter on the pge
+                document.querySelectorAll('.tag-picker-dropdown.open').forEach(openContainer => {
+                    if (openContainer !== this.container) {
+                        openContainer.classList.remove('open');
+                    }
+                });
+
+                const isOpen = this.container.classList.contains('open');
+
+                if (!isOpen) {
+                    // Get coordinates of the button
+                    const rect = this.label.getBoundingClientRect();
+
+                    // Move the dropdown undrneath the button
+                    this.container.style.top = `${rect.bottom + window.scrollY}px`;
+                    this.container.style.left = `${rect.left + window.scrollX}px`;
+                    
+                    // Open the overlay
+                    this.container.classList.add('open');
+                } else {
+                    this.container.classList.remove('open');
+                }
+            });
+
+            // Клик по кнопке очистки внутри списка
+            this.innerClearBtn.addEventListener('click', (e) => {
+                e.stopPropagation(); // Предотвращаем открытие/закрытие выпадающего списка
+                this.clear();        
+                this.container.classList.remove('open'); // Закрываем дропдаун при сбросе
+            });
+
+            document.addEventListener('click', (e) => {
+                if (!this.rootContainer.contains(e.target)) {
+                    this.container.classList.remove('open');
+                }
+            });
+        }
+
+        renderChips() {
             this.container.innerHTML = '';
+            this.container.appendChild(this.innerClearBtn);
             
             this.options.forEach(tag => {
                 const chip = document.createElement('div');
                 chip.className = 'chip';
                 chip.textContent = tag;
                 
-                chip.addEventListener('click', () => this.toggleTag(tag, chip));
+                chip.addEventListener('click', (e) => {
+                    e.stopPropagation(); 
+                    this.toggleTag(tag, chip);
+                });
                 
                 this.container.appendChild(chip);
             });
@@ -576,13 +754,41 @@
                 action = 'selected';
             }
             
-            // 2. Fire the callback and pass relevant information
+            this.updateLabelText();
+            
             if (this.onChangeCallback) {
-                this.onChangeCallback({
-                    action: action,             // 'selected' or 'deselected'
-                    changedTag: tag,            // The specific tag that changed
-                    currentSelection: this.getSelected() // The entire updated list
-                });
+                this.onChangeCallback();
+            }
+        }
+
+        clear() {
+            if (this.selected.size === 0) return;
+
+            this.selected.clear();
+            
+            // Визуально снимаем выделение со всех чипов внутри
+            this.container.querySelectorAll('.chip.selected').forEach(chip => {
+                chip.classList.remove('selected');
+            });
+
+            this.updateLabelText();
+
+            if (this.onChangeCallback) {
+                this.onChangeCallback();
+            }
+        }
+
+        updateLabelText() {
+            const currentList = this.getSelected().sort();
+            if (currentList.length === 0) {
+                this.label.textContent = `${this.defaultLabel}: All`;
+                this.label.classList.remove('filtered');
+                this.innerClearBtn.style.display = 'none';
+            } else {
+                this.label.textContent = `${this.defaultLabel}: ${currentList.join(', ')}`;
+                this.label.classList.add('filtered');
+                this.innerClearBtn.style.display = 'inline-flex';
+                this.label.appendChild(this.innerClearBtn);
             }
         }
 
@@ -789,9 +995,9 @@
         });
 
         if (numberMatchingRecordings === -1){
-            filtersFoldHeader.innerHTML = `Filter recordings`;
+            filtersBoxHeader.innerHTML = `Filter recordings`;
         } else {
-            filtersFoldHeader.innerHTML = `Filter recordings (${numberMatchingRecordings} found)`;
+            filtersBoxHeader.innerHTML = `Filter recordings (${numberMatchingRecordings} found)`;
         }
         
         // Simulate input to the search box, so that the search function is
@@ -958,8 +1164,10 @@
     // Create a few accessors for the necessary UI elements ----
     const annotationsDiv = document.getElementById('annotations');
     const searchResults = document.getElementById('searchResults');
-    const filtersFoldHeader = document.getElementById('filtersFoldHeader');
-    const filtersFoldBody = document.getElementById('filtersFoldBody');
+    const filtersBoxHeader = document.getElementById('filtersBoxHeader');
+    const filtersBoxBody = document.getElementById('filtersBoxBody');
+    const clearAllBtnContainer = document.getElementById('clearAllBtnContainer');
+    const clearAllBtn = document.getElementById('clearAllBtn');
     const fileList = document.getElementById('fileList');
     const audio = document.getElementById('audio');
 
@@ -1009,25 +1217,14 @@
     const tagPickers = Object.fromEntries(
         Object.entries(speakersAttrs)
             .filter(([key, value]) => key !== "Name")
-            .map(([key, value]) => {
-            
+            .map(([key, value]) => {    
                 if (key == "Name") return [];
-                
+            
                 const newPickerDiv = document.createElement("div");
-                newPickerDiv.classList.add("tag-picker-group");
+                newPickerDiv.id = toSafeHtmlName(key) + "-picker";
+                clearAllBtnContainer.before(newPickerDiv)
                 
-                const newPickerLabel = document.createElement("div");
-                newPickerLabel.classList.add("tag-picker-label");
-                newPickerLabel.innerHTML = key + ":"
-                
-                const newPicker = document.createElement("div");
-                newPicker.classList.add("tag-picker-container");
-                newPicker.id = toSafeHtmlName(key) + "-picker";
-                
-                newPickerDiv.append(newPickerLabel, newPicker);
-                filtersFoldBody.append(newPickerDiv);
-                
-                return [key, new TagPicker(newPicker.id, value, filterFileList)];
+                return [key, new TagPicker(newPickerDiv.id, key, value, filterFileList)];
             })
     );
 
@@ -1078,6 +1275,11 @@
         )
 
         closest_annotation.scrollIntoView({behavior: 'smooth', block: 'center'})
+    });
+
+    // Clear all filters when clicking on Clear All button
+    clearAllBtn.addEventListener('click', () => {
+        Object.values(tagPickers).forEach(picker => picker.clear());
     });
 
 </script>
