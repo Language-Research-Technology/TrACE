@@ -307,7 +307,6 @@
         }
 
         #filtersBoxBody {
-            display: block;
             background-color: var(--primary-color); 
             color: #333;  
         }
@@ -317,7 +316,7 @@
             flex-wrap: wrap; 
             /* 0px vertical gap helps to avoid increased vertical space when 
             buttons wrap onto the next line */
-            gap: 0px 8px; 
+            gap: 0px 12px; 
             width: 100%;
         }
 
@@ -343,7 +342,6 @@
         /* Speaker name input field itself */
         #speakerFilterBox {
             flex: 1; /* stays on the right */
-            margin-bottom: 6px;
         }
 
         /* -- Settings for transcript search field -- */
@@ -429,6 +427,7 @@
             border: 1px solid var(--primary-color);
             border-radius: 6px;
             padding: 6px 12px;
+            margin: 0;
             cursor: pointer;
             white-space: nowrap;
             user-select: none;
@@ -473,6 +472,7 @@
         /* Show the hidden window when it has the class 'open' */
         .tag-picker-dropdown.open {
             display: flex;
+            flex-wrap: wrap; 
         }
 
         .chip {
