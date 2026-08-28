@@ -54,7 +54,7 @@
     <!-- END OF TEMPLATE VARIABLES -->
 
     <style>
-        /* ---- HIGH-LEVEL STYLES ---- */
+        /* --- HIGH-LEVEL STYLES --- */
 
         /* Force elements' total width and height to include content, padding, 
         and borders */
@@ -81,6 +81,8 @@
             text-align: center;
             margin: 10px;
         }
+
+        /* -- Left anf right interface areas -- */
 
         #left, #right {
             display: flex;
@@ -109,7 +111,8 @@
             border-bottom: 1px solid #ccc;
         }
 
-        /* --- LOGOS --- */
+        /* --- LOGOS --- */ 
+        
         #header {
             border: 1px solid #ccc;
             flex-shrink: 0;
@@ -281,6 +284,8 @@
 
         /* --- FILTER AND SEARCH AREA --- */
 
+        /* Filter box settngs */
+
         #filtersBox {
             border: 2px solid var(--primary-color);  
             background-color: var(--card-background-color); 
@@ -305,7 +310,6 @@
             display: block;
             background-color: var(--primary-color); 
             color: #333;  
-            box-sizing: border-box;
         }
 
         .filter-buttons-row {
@@ -317,7 +321,19 @@
             width: 100%;
         }
 
-        /* --- FILTER AND SEARCH --- */
+        /* --- Global "Clear all" button --- */ 
+        /* Most of the styling for this comes from .tag-picker-btn */
+        #clearAllBtn {
+            color: #ef4444; 
+        }
+
+        #clearAllBtn:hover {
+            color: #dc2626;
+            background-color: #ffeded;
+            filter: brightness(1); /* Undo parent style*/
+        }
+
+        /* -- Settings for recording name filter -- */
 
         /* Container for the speaker name input field*/
         #nameInput {
@@ -330,7 +346,9 @@
             margin-bottom: 6px;
         }
 
-        /* Container for the trasncript search field*/
+        /* -- Settings for transcript search field -- */
+
+        /* Container for the transcript search field*/
         #transcript-search-input {
             width: 80%;
         }
@@ -392,6 +410,7 @@
         }
 
         /* --- TAG PICKER CONTROL --- */
+
         .tag-picker-btn-container {
             position: relative; 
             display: inline-block;
@@ -419,7 +438,6 @@
             max-width: 100%;          
             overflow: hidden;         
             text-overflow: ellipsis;   
-            box-sizing: border-box; /* Include padding into width calculation */
         }
 
         /* Change background color when filter options are selected */
@@ -447,7 +465,6 @@
             flex-wrap: wrap; 
             min-width: 100px;
             max-width: 260px; 
-            box-sizing: border-box; 
         }
 
         /* Show the hidden window when it has the class 'open' */
@@ -499,19 +516,6 @@
         .tag-picker-inner-clear:hover {
             color: #ef4444;
         }
-
-        /* --- GLOBAL "CLEAR ALL" BUTTON --- */ 
-        /* Most of the styling for this comes from .tag-picker-btn */
-        #clearAllBtn {
-            color: #ef4444; 
-        }
-
-        #clearAllBtn:hover {
-            color: #dc2626;
-            background-color: #ffeded;
-            filter: brightness(1); /* Undo parent style*/
-        }
-
     </style>
 </head>
 <body>
