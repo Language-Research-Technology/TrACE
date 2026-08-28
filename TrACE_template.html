@@ -168,6 +168,13 @@
             background-color: var(--background-color);
         }
 
+        button.file-button {
+            /* Needed for animation of search results -- all file buttons 
+            start with order 2; search matches are assigned order 1, which
+            in a flex layout automatically puts them on top */
+            order: 2;
+        }
+
         button.active-file {
             display: inline-flex;
             border: 2px outset;
@@ -207,8 +214,9 @@
             cursor: not-allowed !important;
         }
 
-        .search-match {
+        .file-button.search-match {
             background-color: var(--filter-match-color);
+            order: 1;
         }
 
         /* --- AUDIO PLAYER --- */
@@ -522,6 +530,13 @@
         .tag-picker-inner-clear:hover {
             color: #ef4444;
         }
+
+    #fileList {
+        display: flex;
+        flex-direction: column; 
+        gap: 8px; 
+    }
+
     </style>
 </head>
 <body>
@@ -954,6 +969,14 @@
 
         filteredData = [];
 
+        // Remember buttons initial positions (to animate movements for the
+        // search matches)
+        const firstPositions = [];
+        fileButtons.forEach(btn => {
+            firstPositions.push(btn.getBoundingClientRect());
+        });
+
+        // Find recordings which match the specified filters
         fileButtons.forEach(btn => {
             const file = findTranscript(btn.textContent)
   
@@ -997,11 +1020,34 @@
             }
         });
 
+        // Update the filterBox header with the number of matching recordings 
+        // (only show the number if at least one filter is active)
         if (numberMatchingRecordings === -1){
             filtersBoxHeader.innerHTML = `Filter recordings`;
         } else {
             filtersBoxHeader.innerHTML = `Filter recordings (${numberMatchingRecordings} found)`;
         }
+
+        // Animate the buttons movement
+        fileButtons.forEach((btn, index) => {
+            const startPos = firstPositions[index];
+            const endPos = btn.getBoundingClientRect();
+
+            // Calculate how far the button actually moved
+            const invertY = startPos.top - endPos.top;
+            const invertX = startPos.left - endPos.left;
+
+            // If the button moved, slide it smoothly
+            if (invertY !== 0 || invertX !== 0) {
+            btn.animate([
+                { transform: `translate(${invertX}px, ${invertY}px)` }, // Start at old position
+                { transform: 'translate(0, 0)' }                        // Slide to new position
+            ], {
+                duration: 500,        // Animation speed in milliseconds 
+                easing: 'ease-in-out' // Smooth start and stop acceleration
+            });
+            }
+        });
         
         // Simulate input to the search box, so that the search function is
         // run and the results are updated. This is needed when the search
@@ -1019,7 +1065,7 @@
         searchResults.innerHTML = '';
         if (!query) {
             // If the search box is empty, show file list again
-            fileList.style.display = 'block';
+            fileList.style.display = 'flex';
             return;
         }
 
@@ -1194,6 +1240,8 @@
         btn.onclick = () => {
             store.setCurrentRecording(file.displayName)
         };
+
+        btn.classList.add("file-button");
 
         fileList.appendChild(btn);
         fileButtons.push(btn);
