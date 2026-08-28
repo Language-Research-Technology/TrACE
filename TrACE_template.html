@@ -698,7 +698,7 @@
 
             this.innerClearBtn = document.createElement('span');
             this.innerClearBtn.className = 'tag-picker-inner-clear';
-            this.innerClearBtn.innerHTML = '&#10005;'; // Символ крестика
+            this.innerClearBtn.innerHTML = '&#10005;'; // Cross sign
             this.innerClearBtn.title = 'Clear filter';
 
             this.rootContainer.appendChild(this.label);
@@ -727,11 +727,15 @@
                 }
             });
 
-            // Клик по кнопке очистки внутри списка
+            // Process clicking on the Clear button within a filter
             this.innerClearBtn.addEventListener('click', (e) => {
-                e.stopPropagation(); // Предотвращаем открытие/закрытие выпадающего списка
+                // Do not treat the click as the click on the filter button 
+                // itself -- i.e., the dropdown should not show up if it's
+                // not already open
+                e.stopPropagation(); 
                 this.clear();        
-                this.container.classList.remove('open'); // Закрываем дропдаун при сбросе
+                // Close the dropdown if it was open
+                this.container.classList.remove('open');
             });
 
             document.addEventListener('click', (e) => {
@@ -784,7 +788,7 @@
 
             this.selected.clear();
             
-            // Визуально снимаем выделение со всех чипов внутри
+            // Deselect all individual chips
             this.container.querySelectorAll('.chip.selected').forEach(chip => {
                 chip.classList.remove('selected');
             });
