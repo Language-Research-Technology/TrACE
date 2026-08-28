@@ -154,6 +154,14 @@
             border-radius: 0.5em;
         }
 
+        /* --- FILE LIST --- */
+
+        #fileList {
+            /* To allow file button movement animation at search match */
+            display: flex;
+            flex-direction: column; 
+        }
+
         /* --- BUTTONS --- */
 
         button {
@@ -530,13 +538,6 @@
         .tag-picker-inner-clear:hover {
             color: #ef4444;
         }
-
-    #fileList {
-        display: flex;
-        flex-direction: column; 
-        gap: 8px; 
-    }
-
     </style>
 </head>
 <body>
