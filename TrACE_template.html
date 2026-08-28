@@ -16,6 +16,9 @@
         // This is the name of the TIER_ID associated with notes/remarks in 
         // the annotations
         const annNoteTier = "NOTE"
+        
+        // This is the placeholder text in the searchBox field
+        const searchBoxPlaceholder = "Search interview transcripts..."
     </script>
 
     <style>
@@ -569,7 +572,7 @@
                 </div>
                 <div class="search-container">
                     <div class="text-input-container" id="transcript-search-input">
-                        <input type="text" class="custom-text-input" placeholder="Search interview content..." id="searchBox">
+                        <input type="text" class="custom-text-input" placeholder="" id="searchBox">
                         <div class="clear-text-btn" id="clearSearchBtn" title="Clear text">&times;</div>
                     </div>
                 </div>
@@ -1174,9 +1177,12 @@
     // Instantiate custom controls ----
     const searchBox = new ClearableTextInput('searchBox', 'clearSearchBtn', 
                                              searchAnnotations);
+
+    searchBox.input.placeholder = searchBoxPlaceholder;
     const speakerFilterBox = new ClearableTextInput('speakerFilterBox', 
                                                     'clearNameFilterBtn', 
                                                     filterFileList);
+
 
     // Create recording buttons ----
     const fileButtons = [];
