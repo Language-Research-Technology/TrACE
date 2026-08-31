@@ -118,6 +118,13 @@
             border-bottom: 1px solid #ccc;
         }
 
+        /* Scrolling container taking the available space */
+        .scrollBox {
+            flex: 1 1 auto;
+            overflow-y: auto;
+            padding: 0 1em;
+        }
+
         /* --- LOGOS --- */ 
         
         #header {
@@ -265,19 +272,11 @@
 
         /* --- SPEAKER CARDS --- */
 
-        /* Speaker cards stay above annotations */
         #speakerCards {
             margin: 1em 0;
             display: flex;
             flex-wrap: wrap;
             gap: 1em;
-        }
-
-        /* Annotations take remaining space and scroll */
-        .scrollBox {
-            flex: 1 1 auto;
-            overflow-y: auto;
-            padding: 0 1em;
         }
 
         .speaker-card {
@@ -622,8 +621,10 @@
             </div>  
         </div>
 
-        <div id="speakerCards"></div>
-        <div class="scrollBox" id="annotations"></div>
+        <div class="scrollBox" id="speakersAndAnnotations">
+            <div id="speakerCards"></div>
+            <div id="annotations"></div>
+        </div>
     </div>
 </div>
 
@@ -1206,8 +1207,6 @@
         state.annotationButtons.forEach(btn => {
             annotationsDiv.appendChild(btn);
         })
-        // Scroll to the top of the annotations list
-        annotationsDiv.scrollTo({top: 0, behavior: 'smooth'});
     }
 
     /**
@@ -1224,6 +1223,10 @@
         
         state.activeRecordingButton.classList.add('active-file');
         loadFile(state.currentTranscript)
+
+        // Scroll to the top of the annotations area to show speaker cards
+        // and the start of the transcript
+        speakersAndAnnotationsDiv.scrollTo({top: 0, behavior: 'instant'});
     }
 
     // ==========================================
@@ -1240,6 +1243,7 @@
     store.addEventListener('recordingChange', handleRecordingUpdate);
 
     // Create a few accessors for the necessary UI elements ----
+    const speakersAndAnnotationsDiv = document.getElementById('speakersAndAnnotations');
     const annotationsDiv = document.getElementById('annotations');
     const searchResults = document.getElementById('searchResults');
     const filtersBoxHeader = document.getElementById('filtersBoxHeader');
