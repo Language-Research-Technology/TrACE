@@ -19,6 +19,10 @@
         
         // This is the placeholder text in the searchBox field
         const searchBoxPlaceholder = "Search interview transcripts..."
+
+        // Whether annotations notes should be clickable (and thus could be 
+        // used to jump to their initial timestamp) or not.
+        const clickableAnnotationNotes = false;
     </script>
 
     <style>
@@ -207,24 +211,35 @@
             background-color: var(--ann-highlight-color);
         }
 
-        .annotation-note {
-            color: var(--note-text-color);
-            font-weight: bold;
-        }
-
         button:disabled {
             background-color: #eee;
             color: #888;
             cursor: not-allowed !important;
         }
         
-        button:disabled * {
-            cursor: not-allowed !important;
-        }
-
         .file-button.search-match {
             background-color: var(--filter-match-color);
             order: 1;
+        }
+
+        .annotation-note {
+            color: var(--note-text-color);
+            font-weight: bold;
+        }
+
+        /* Annotation notes can be disabled, but we still want to keep a
+        colored appearance */
+        .annotation-note:disabled {
+            color: var(--note-text-color);
+            font-weight: bold;
+            cursor: not-allowed;
+        }
+
+        .annotation-note.highlight:disabled {
+            color: var(--note-text-color);
+            font-weight: bold;
+            cursor: not-allowed;
+            background-color: var(--ann-highlight-color);
         }
 
         /* --- AUDIO PLAYER --- */
@@ -886,7 +901,12 @@
 
                 // Allow styling of notes in the annotations
                 if (tierId === annNoteTier) {
-                    btn.classList.add("annotation-note")
+                    btn.classList.add("annotation-note");
+                    // If the config says so, disable clicking on annotation
+                    // notes
+                    if (!clickableAnnotationNotes) {
+                        btn.disabled = true;
+                    }
                 }
 
                 btn.onclick = () => {
