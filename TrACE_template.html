@@ -1184,6 +1184,10 @@
             card.className = 'speaker-card';
             card.innerHTML = `<h3>${match.Name}</h3>`;
             for (const [key, value] of Object.entries(match)) {
+                // Skip names -- we already use them as title
+                if (key == "Name") {
+                    continue
+                }
                 // For values, we treat ";" as separator, which for presentation
                 // purposes is replaced with ", "
                 card.innerHTML = card.innerHTML + `<p><span class="label">${key}:</span> ${value.replace(";", ", ")}</p>`
