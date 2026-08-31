@@ -1337,7 +1337,7 @@
                 btn.classList.add('highlight');
                 // Auto-scroll if the currently playing annotation reaches
                 // the end of the screen
-                if (btn.getBoundingClientRect().bottom > annotationsDiv.getBoundingClientRect().bottom) {
+                if (btn.getBoundingClientRect().bottom > speakersAndAnnotationsDiv.getBoundingClientRect().bottom) {
                     btn.scrollIntoView({behavior: 'smooth', block: 'center'})
                 };
             } else {
