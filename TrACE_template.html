@@ -1191,7 +1191,7 @@
                 }
                 // For values, we treat ";" as separator, which for presentation
                 // purposes is replaced with ", "
-                card.innerHTML = card.innerHTML + `<p><span class="label">${key}:</span> ${value.replace(";", ", ")}</p>`
+                card.innerHTML = card.innerHTML + `<p><span class="label">${key}:</span> ${value.replaceAll(";", ", ")}</p>`
             }
             speakerCardsDiv.appendChild(card);
         });
