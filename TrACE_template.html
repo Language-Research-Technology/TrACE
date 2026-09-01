@@ -16,6 +16,9 @@
         // This is the name of the TIER_ID associated with notes/remarks in 
         // the annotations
         const annNoteTier = "NOTE"
+
+        // This is the placholder text in the recording name filter
+        const recNameFilterPlaceholder = "Filter by recording name..."
         
         // This is the placeholder text in the searchBox field
         const searchBoxPlaceholder = "Search interview transcripts..."
@@ -588,7 +591,7 @@
                 <div id="filtersBoxBody" class="search-container">
                     <div class="text-input-container" id="nameInput">
                         <!-- <label class="label">Name:</label> -->
-                        <input type="text" class="custom-text-input" placeholder="Filter by recording name..."
+                        <input type="text" class="custom-text-input" placeholder=""
                             id="speakerFilterBox">
                         <div class="clear-text-btn" id="clearNameFilterBtn" title="Clear text">&times;</div>
                     </div> 
@@ -1261,6 +1264,8 @@
     const speakerFilterBox = new ClearableTextInput('speakerFilterBox', 
                                                     'clearNameFilterBtn', 
                                                     filterFileList);
+
+    speakerFilterBox.input.placeholder = recNameFilterPlaceholder;
 
 
     // Create recording buttons ----
