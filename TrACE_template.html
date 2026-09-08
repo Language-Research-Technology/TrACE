@@ -36,10 +36,11 @@
         :root {
             --primary-color: #228be6;
 
-            /* Color for NOTE annotations. A mix with the primary color and 
+            /* Color for coloured buttons -- NOTE annotations, and buttons 
+            related to help popup dialogs. A mix with the primary color and 
             black, to try and ensure that the text is not too light for
             legibility */
-            --note-text-color: color-mix(in srgb, var(--primary-color) 80%, black);
+            --theme-text-color: color-mix(in srgb, var(--primary-color) 80%, black);
             --placeholder-color: color-mix(in srgb, var(--primary-color) 60%, black);
 
             /* By default, applies to left area, file and annotations buttons,
@@ -209,7 +210,7 @@
             border: 1px solid #bbb;
             border: 1px solid var(--primary-color);
             background-color: var(--background-color);
-            color: var(--note-text-color);
+            color: var(--theme-text-color);
             margin: 2px;
             width: 60px;
             text-align: center;
@@ -290,20 +291,20 @@
         }
 
         .annotation-note {
-            color: var(--note-text-color);
+            color: var(--theme-text-color);
             font-weight: bold;
         }
 
         /* Annotation notes can be disabled, but we still want to keep a
         colored appearance */
         .annotation-note:disabled {
-            color: var(--note-text-color);
+            color: var(--theme-text-color);
             font-weight: bold;
             cursor: not-allowed;
         }
 
         .annotation-note.highlight:disabled {
-            color: var(--note-text-color);
+            color: var(--theme-text-color);
             font-weight: bold;
             cursor: not-allowed;
             background-color: var(--ann-highlight-color);
