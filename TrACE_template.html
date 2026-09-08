@@ -26,6 +26,9 @@
         // Whether annotations notes should be clickable (and thus could be 
         // used to jump to their initial timestamp) or not.
         const clickableAnnotationNotes = false;
+
+        const licenceHTML = ``
+        const helpHTML = ``;
     </script>
 
     <style>
@@ -49,6 +52,10 @@
             /* Background for speaker cards -- similar to the above, 
             but darker*/
             --card-background-color: color-mix(in srgb, var(--primary-color) 15%, snow);
+
+            /* Help background -- to highlight TrACE info in the help dialog. 
+            By default, same as the card background color*/
+            --help-background-color: color-mix(in srgb, var(--primary-color) 15%, snow);
 
             /* --- Button state colors --- */
 
@@ -133,6 +140,7 @@
         #header {
             border: 1px solid #ccc;
             flex-shrink: 0;
+            position: relative;
         }
 
         .logo-grid {
@@ -166,6 +174,43 @@
             font-weight: bold;
             font-size: small;
             border-radius: 0.5em;
+        }
+
+        /* --- HELP AND LICENCE BUTTONS AREA --- */ 
+
+         /* Containment block fpr the buttons locked to the far right, 
+         independent of the header flow */
+        .header-right-container {
+            position: absolute;
+            right: 10px;
+            top: 0;
+            bottom: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 1px;
+            height: 100%; /* Matches the header height exactly */
+        }
+
+        /* Buttons to open the popup window */
+        .open-modal-btn {
+            background: #ffffff; 
+            border: 1px solid #bbb;
+            border: 1px solid var(--primary-color);
+            background-color: var(--background-color);
+            color: var(--note-text-color);
+            margin: 2px;
+            width: 60px;
+            text-align: center;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 14px;
+            white-space: nowrap; /* Prevents text from wrapping to a second line */
+        }
+
+        .open-modal-btn:hover {
+            background: #eeeeee;
         }
 
         /* --- FILE LIST --- */
@@ -555,9 +600,107 @@
         .tag-picker-inner-clear:hover {
             color: #ef4444;
         }
+
+        /* --- POPUP DIALOGS --- */
+
+        /* Overall container covering the entire screen. Hidden by default */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: -webkit-box;
+            display: -ms-flexbox;
+            display: flex; /* 2015 compliant centering */
+            -webkit-box-pack: center;
+            -ms-flex-pack: center;
+            justify-content: center;
+            -webkit-box-align: center;
+            -ms-flex-align: center;
+            align-items: center;
+            visibility: hidden;
+            opacity: 0;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+            z-index: 9999;
+        }
+
+        /* When the class is changed, show the dialog */
+        .modal-overlay.is-open {
+            visibility: visible;
+            opacity: 1;
+        }
+
+        /* Container for the overall dialog window -- it houses the close button
+        in the top corner and the main content*/
+        .modal-content {
+            background-color: #fff;
+            border-radius: 4px;
+            width: 90%;
+            max-width: 800px; 
+            height: 80vh;
+            height: 80dvh;
+            overflow: hidden;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Container for the main boyd of the dialog -- it hosues the text field
+        and the licnece acceptance button, when it is present */
+        .modal-body {
+            padding: 30px 30px 10px;
+            min-height: 0;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column; 
+            flex: 1;
+            justify-content: center; /* Centers horizontally */
+            align-items: center;     /* Centers vertically */
+        }
+
+        /* Container for the dialog text */
+        .modal-text {
+            overflow-y: auto;
+            flex: 1;
+            min-height: 0;
+            margin-bottom: 20px;
+        }
+
+        /* Top right corner close button */
+        .modal-close-button {
+            background: transparent;
+            border: none;
+            padding: 0;
+            margin: 0;
+            cursor: pointer;
+            font-size: 24px;
+            position: absolute;
+            width: 24px;
+            height: 24px;
+            top: 0px;
+            right: 0px;
+        }
+
+        .modal-accept-button {
+            display: flex;
+            width: 140px;
+        }
+
+        /* This is a style to highlight TrACE-related information in the help
+        popup, which by default is added to any user-provided info text */
+        .trace-info {
+            border: 1px solid var(--primary-color);
+            background: var(--help-background-color);
+            padding: 5px;
+            border-radius: 5px;
+        }
     </style>
 </head>
 <body>
+
+<!-- Main interface -->
 
 <div id="header">
     <h2 id="topHeader"></h2>
@@ -577,6 +720,10 @@
         </div>
     </div>
 	-->
+    <div id="headerRightBox" class="header-right-container">
+        <button class="open-modal-btn" id="openLicenceBtn">Licence</button>
+        <button class="open-modal-btn" id="openHelpBtn">Help</button>
+    </div>
 </div>  
 
 <div id="main">
@@ -838,6 +985,157 @@
             return Array.from(this.selected);
         }
     }
+
+    // Class for modal dialog popups, like licence and help dialogs
+    class modalDialog {
+        constructor(modalId, autoOpen=false, autoOpenOncePerSession=true, 
+                    requireAcceptance=false
+        ) {
+
+            this.id = modalId;
+            this.autoOpen = autoOpen;
+            this.autoOpenOncePerSession = autoOpenOncePerSession;
+            this.requireAcceptance = requireAcceptance;
+            
+            // Automatically generate and add the modal to the webpage layout
+            this.buildStructure();
+            this.init();
+        }
+
+        buildStructure() {
+            // Create the overall overlay, covering the whole screen
+            this.modal = document.createElement('div');
+            this.modal.className = 'modal-overlay';
+            this.modal.id = this.id;
+
+            // Create the outer content container (houses the close button
+            // and the inner content content, so that we can replace inner
+            // content with anything without messing with the close button
+            // placement)
+            this.contentWrapper = document.createElement('div');
+            this.contentWrapper.className = 'modal-content';
+
+            // Create the inner content container -- houses test and any
+            // additional buttons
+            this.bodyContainer = document.createElement('div');
+            this.bodyContainer.className = 'modal-body';
+            this.bodyContainer.id = this.id + '-body';
+
+            // Create text container
+            this.textWrapper = document.createElement('div');
+            this.textWrapper.className = 'modal-text';
+            this.textWrapper.id = this.id + '-text';
+
+            // Create the top right corner close button
+            this.closeBtn = document.createElement('button');
+            this.closeBtn.className = 'modal-close-button';
+            this.closeBtn.setAttribute('aria-label', 'Close modal');
+            this.closeBtn.innerHTML = '&times;';
+
+            // If we want to close the dialog only when the user clicks 
+            // "Accept conditions", create this button
+            if (this.requireAcceptance) {
+                this.acceptBtn = document.createElement('button');
+                this.acceptBtn.className = 'modal-accept-button';
+                this.acceptBtn.setAttribute('aria-label', 'Accept conditions');
+                this.acceptBtn.innerHTML = 'Accept conditions'; 
+                this.closeBtn.style.display = 'none';
+            };
+
+            // Put all pieces together
+            this.modal.appendChild(this.contentWrapper);
+            this.contentWrapper.appendChild(this.bodyContainer);
+            this.bodyContainer.appendChild(this.textWrapper);
+
+            this.contentWrapper.appendChild(this.closeBtn);
+            if (this.requireAcceptance) {
+                this.bodyContainer.appendChild(this.acceptBtn);
+            };
+            
+            document.body.appendChild(this.modal);
+        }
+
+        init() {
+            this.closeBtn.addEventListener('click', () => this.close());
+
+            if (this.requireAcceptance) {
+                // If the dialog requires acceptance, the user only needs to do
+                // this once. If they open the licence window again, the Accept
+                // button will not be shown to them anymore
+                this.acceptBtn.addEventListener('click', () => {
+                    this.close(); 
+                    // Do not require further acceptances -- now the message
+                    // can be closed as usual
+                    this.requireAcceptance = false;  
+                    // Show the close cross button at the top right
+                    this.closeBtn.style.display = 'block';
+                    // Hide the accept button
+                    this.acceptBtn.style.display = 'none';
+                });
+            }
+
+            // Close on keyboard ESC keypress event; only trigger if the user
+            // does NOT have to click on the "Accept conditions" button (either
+            // because they already did, or it was not required in the first 
+            // place)
+            window.addEventListener('keydown', (event) => {
+                if (event.key === 'Escape' && !this.requireAcceptance) {
+                    this.close();
+                }
+            });
+
+            // Close when clicking layout space outside white box; only trigger 
+            // if the user does NOT have to click on the "Accept conditions" 
+            // button
+            this.modal.addEventListener('click', (event) => {
+                if (event.target === this.modal && !this.requireAcceptance) {
+                    this.close();
+                }
+            });
+        
+            // Handle session auto-open rules if parameters are active
+            if (this.autoOpen) {
+                window.addEventListener('load', () => this.handleAutoOpen());
+            }
+        }
+
+        // Method for setting text content of the modal
+        setContent(htmlContent) {
+            if (this.textWrapper) {
+                this.textWrapper.innerHTML = htmlContent;
+            }
+        }
+
+        open() {
+            this.modal.classList.add('is-open'); 
+            // Always open at the beginning of the text
+            this.textWrapper.scrollTo({ top: 0, behavior: "instant"});
+        }
+
+        close() {
+            this.modal.classList.remove('is-open');
+        }
+
+        // Method to allow the dialog to auto-open when the web-page is first 
+        // loaded
+        handleAutoOpen() {
+            // If storage tracking is enabled, check the key before opening
+            if (this.autoOpenOncePerSession) {
+                const storageKey = 'seen_' + this.id;
+                
+                // Open ONLY if they haven't seen it yet
+                if (!sessionStorage.getItem(storageKey)) {
+                    this.open();
+                    sessionStorage.setItem(storageKey, 'true');
+                }
+            } else {
+                // If tracking is explicitly disabled, open every time the page 
+                // loads
+                this.open();
+            }
+        }
+    }
+
     
     // A class for an object to hold global app state
     class appState extends EventTarget {
@@ -1256,6 +1554,9 @@
     const fileList = document.getElementById('fileList');
     const audio = document.getElementById('audio');
 
+    const openLicenceBtn = document.getElementById('openLicenceBtn');
+    const openHelpBtn = document.getElementById('openHelpBtn');
+
     // Instantiate custom controls ----
     const searchBox = new ClearableTextInput('searchBox', 'clearSearchBtn', 
                                              searchAnnotations);
@@ -1323,6 +1624,60 @@
     // Auxiliary data variables to use in searching and filtering
     var filteredData = transcripts;
 
+    // Create licence and info modal windows ----
+    if (licenceHTML === "") {
+        openLicenceBtn.style.display = 'none';
+    } else {
+        const licenceModal = new modalDialog(modalId='licenceModal', 
+                                             autoOpen=true,
+                                             autoOpenOncePerSession=false, 
+                                             requireAcceptance=true);
+
+        openLicenceBtn.addEventListener('click', () => {
+            licenceModal.open();
+        });
+
+        licenceModal.setContent(licenceHTML);
+    };
+
+    const helpModal = new modalDialog(modalId='helpModal');
+
+    openHelpBtn.addEventListener('click', () => {
+        helpModal.open();
+    });
+
+    // Build the help text: take user-provided text and add a header and 
+    // a footer with general info about TrACE
+    const combinedHelpHTML = `
+    <div class="trace-info">
+    <p>This page is built using TrACE (Transcribed Audio 
+        Collection Explorer), created by the 
+        <a href="https://www.ldaca.edu.au/" target="_blank">LDaCA</a> team at 
+        the Australian National University.
+       See <a href="#trace-details">more information</a> at the end of this text.
+    </p>
+    </div>
+    ${helpHTML}
+    <div class="trace-info" id="trace-details">
+    <p>TrACE (the Transcribed Audio Collection Explorer) is a browser-based 
+        interface, designed to facilitate engagement and interaction with 
+        collections of audio recordings and transcripts. It allows users to 
+        explore time-aligned interview transcripts while listening to the audio.
+    </p>
+    <p>TrACE can be adapted for use with any collection of audio recordings and 
+        transcripts or timed summaries aligned with the audio. The interface
+        consists of a single HTML page, and can be hosted on a local or remote
+        server together with its associated audio and transcript files. 
+    </p>
+    <p>For more information on how to use it with your own data, see the TrACE
+        page on Github:
+        <a href="http://github.com/Language-Research-Technology/TrACE" target="_blank">http://github.com/Language-Research-Technology/TrACE</a>
+    </p>
+    <div>
+    `
+    
+    helpModal.setContent(combinedHelpHTML);
+
     // ==========================================
     // Event listeners
     // ==========================================
@@ -1378,6 +1733,7 @@
     clearAllBtn.addEventListener('click', () => {
         Object.values(tagPickers).forEach(picker => picker.clear());
     });
+
 
 </script>
 
