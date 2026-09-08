@@ -99,6 +99,16 @@
             margin: 10px;
         }
 
+        button {
+            cursor: pointer;
+        }
+
+        button:disabled {
+            background-color: #eee;
+            color: #888;
+            cursor: not-allowed !important;
+        }
+
         /* -- Left anf right interface areas -- */
 
         #left, #right {
@@ -221,9 +231,49 @@
             flex-direction: column; 
         }
 
-        /* --- BUTTONS --- */
+        .file-btn {
+            display: inline-block;
+            gap: 8px;
+            margin: 0.5em 0;
+            padding: 0.5em;
+            width: 100%;
+            text-align: left;
+            cursor: pointer;
+            border: 1px solid;
+            background-color: var(--background-color);
+            /* Needed for animation of search results -- all file buttons 
+            start with order 2; search matches are assigned order 1, which
+            in a flex layout automatically puts them on top */
+            order: 2;
+        }
 
-        button {
+        .file-btn.active-file {
+            display: inline-flex;
+            border: 2px outset;
+            background-color: var(--active-file-color);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            border-color: var(--primary-color);
+        }
+
+        .file-btn.active-file::before {
+            content: '';
+            top: 0;
+            bottom: 0;
+            left: 0;
+            width: 4px; /* Thin accent bar */
+            background-color: var(--primary-color);
+            border-top-left-radius: 5px;
+            border-bottom-left-radius: 5px;
+        }
+
+        .file-btn.search-match {
+            background-color: var(--filter-match-color);
+            order: 1;
+        }
+
+        /* --- ANNOTATION BUTTONS --- */        
+
+        .annotation-btn {
             display: inline-block;
             gap: 8px;
             margin: 0.5em 0;
@@ -235,46 +285,8 @@
             background-color: var(--background-color);
         }
 
-        button.file-button {
-            /* Needed for animation of search results -- all file buttons 
-            start with order 2; search matches are assigned order 1, which
-            in a flex layout automatically puts them on top */
-            order: 2;
-        }
-
-        button.active-file {
-            display: inline-flex;
-            border: 2px outset;
-            background-color: var(--active-file-color);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-            border-color: var(--primary-color);
-        }
-
-        button.active-file::before {
-            content: '';
-            top: 0;
-            bottom: 0;
-            left: 0;
-            width: 4px; /* Thin accent bar */
-            background-color: var(--primary-color);
-            border-top-left-radius: 5px;
-            border-bottom-left-radius: 5px;
-        }
-
-        /* Button highlights */
-        .highlight {
+        .annotation-btn.highlight {
             background-color: var(--ann-highlight-color);
-        }
-
-        button:disabled {
-            background-color: #eee;
-            color: #888;
-            cursor: not-allowed !important;
-        }
-        
-        .file-button.search-match {
-            background-color: var(--filter-match-color);
-            order: 1;
         }
 
         .annotation-note {
@@ -1196,6 +1208,7 @@
                 const tierId = ann.TIER_ID;
 
                 const btn = document.createElement('button');
+                btn.classList.add('annotation-btn');
                 btn.innerHTML = `<strong>${tierId}:</strong> ${ann.content}`;
                 btn.dataset.start = ann.start;
                 btn.dataset.end = ann.end;
@@ -1580,7 +1593,7 @@
             store.setCurrentRecording(file.displayName)
         };
 
-        btn.classList.add("file-button");
+        btn.classList.add("file-btn");
 
         fileList.appendChild(btn);
         fileButtons.push(btn);
