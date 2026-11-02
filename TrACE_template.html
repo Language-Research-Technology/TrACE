@@ -277,6 +277,19 @@
             order: 1;
         }
 
+        /* Individual annotations matching the search query*/
+        .query-match-btn {
+            display: inline-block;
+            gap: 8px;
+            margin: 0.5em 0;
+            padding: 0.5em;
+            width: 100%;
+            text-align: left;
+            cursor: pointer;
+            border: 1px solid;
+            background-color: var(--background-color);
+        }
+
         /* --- ANNOTATION BUTTONS --- */        
 
         .annotation-btn {
@@ -1435,10 +1448,11 @@
             file.annotations.forEach(ann => {
                 const contentLower = ann.content.toLowerCase();
                 if (contentLower.includes(query)) {
-                    const regex = new RegExp(`(${query})`, 'gi');
+                    const regex = new RegExp(`(${RegExp.escape(query)})`, 'gi');
                     const highlighted = ann.content.replace(regex, '<span class="highlight">$1</span>');
 
                     const snippetBtn = document.createElement('button');
+                    snippetBtn.classList.add("query-match-btn");
                     snippetBtn.innerHTML = `<strong>${ann.TIER_ID}:</strong> ${highlighted}`;
 
                     snippetBtn.onclick = () => {
