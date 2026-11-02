@@ -1769,18 +1769,13 @@
 
         const currentTime = audio.currentTime * 1000;
 
-        const closest_annotation = state.annotationButtons.find(btn => {
-            const start = parseInt(btn.dataset.start);
-            const end = parseInt(btn.dataset.end);
-            if (currentTime >= start && currentTime <= end) {
-                return(true)
-            }  else {
-                return(false)
-            }
-        }
+        const closest_annotation = state.annotationButtons.findLast(
+            btn =>  parseInt(btn.dataset.start) <= currentTime
         )
 
-        closest_annotation.scrollIntoView({behavior: 'smooth', block: 'center'})
+
+
+        closest_annotation?.scrollIntoView({behavior: 'smooth', block: 'center'})
     });
 
     // Clear all filters when clicking on Clear All button
