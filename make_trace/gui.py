@@ -4,7 +4,7 @@ from tkinter import colorchooser, filedialog, ttk
 from pathlib import Path
 
 from constants import HELP_STRINGS, DEFAULTS
-from prep_trace_data import do_processing
+from processing import do_processing
 
 def run_gui():
 

@@ -3,7 +3,7 @@ import textwrap
 from pathlib import Path
 
 from constants import DEFAULTS, HELP_STRINGS
-from prep_trace_data import do_processing
+from processing import do_processing
 
 
 # Wrap the help text and print defalut values in the CLI help message
