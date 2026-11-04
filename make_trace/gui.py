@@ -2,6 +2,7 @@ import tkinter as tk
 import tkinter.font as tkFont
 from tkinter import colorchooser, filedialog, ttk
 from pathlib import Path
+import re
 
 from constants import HELP_STRINGS, DEFAULTS
 from processing import do_processing
@@ -15,7 +16,8 @@ def run_gui():
         input_vars = {k:v.get() for k,v in gui_vars.items()}
 
         paths = ["audio_dir", "elan_dir", "output_dir", 
-                 "speakers_info_file", "recordings_info_file"]
+                 "speakers_info_file", "recordings_info_file",
+                 "help_file", "licence_file"]
         for v in paths:
             if input_vars[v].strip() == "":
                 input_vars[v] = None
@@ -328,15 +330,20 @@ def run_gui():
     # function, so that they can be easily unpacked later
     
     path_vars = ["audio_dir", "elan_dir", "speakers_info_file",
-                 "recordings_info_file", "output_dir"]
+                 "recordings_info_file", 
+                 "help_file", "licence_file",
+                 "output_dir"]
     path_labels = ["Audio folder", "Elan folder", 
                    "Speakers CSV file", "Recordings CSV file",
+                   "Help file (optional)", "Licence file (optional)",
                    "Output folder"]
     path_tooltips = [
         HELP_STRINGS["audio_dir"],
         HELP_STRINGS["elan_dir"],
         HELP_STRINGS["speakers_info_file"],
         HELP_STRINGS["recordings_info_file"],
+        HELP_STRINGS["help_file"],
+        HELP_STRINGS["licence_file"],
         HELP_STRINGS["output_dir"]
         ]
 
@@ -349,7 +356,7 @@ def run_gui():
         Tooltip(label, text=path_tooltips[i], waittime=50)
 
         if (var_name == "output_dir"):
-            var = tk.StringVar(value=DEFAULTS["output_dir"])
+            var = tk.StringVar(value=DEFAULTS[var_name])
         else:
             var = tk.StringVar()
             

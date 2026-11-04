@@ -7,6 +7,7 @@ import xml.etree.ElementTree as ET
 import zlib
 from pathlib import Path
 import logging
+from markdown2.markdown2 import Markdown
 
 logger = logging.getLogger(__name__)
 
@@ -198,7 +199,9 @@ def render_template(template_str,
                     ann_note_tier, 
                     primary_color,
                     ann_highlight_color,
-                    filter_match_color):
+                    filter_match_color, 
+                    help_file,
+                    licence_file):
 
     """
     Take an HTML template and replace configurable options with provided values
@@ -260,6 +263,32 @@ def render_template(template_str,
                  out,
                  flags=re.MULTILINE)
 
+    # Help markdown text
+    if help_file is not None and Path(help_file).is_file():
+
+        with open(Path(help_file)) as f:
+            help_text = f.read()
+
+        md = Markdown()
+
+        out = re.sub('^(.*helpHTML = `)`.*$', 
+                    f'\\1{md.convert(help_text)}`;',
+                    out,
+                    flags=re.MULTILINE)
+
+    # Licence markdown text
+    if licence_file is not None and Path(licence_file).is_file():
+
+        with open(Path(licence_file)) as f:
+            licence_text = f.read()
+
+        md = Markdown()
+
+        out = re.sub('^(.*licenceHTML = `)`.*$', 
+                    f'\\1{md.convert(licence_text)}`;',
+                    out,
+                    flags=re.MULTILINE)
+
     with open(Path(output_file), "w", newline="", encoding="utf-8") as f:
         f.write(out)
 
@@ -300,7 +329,8 @@ def validate_paths(audio_dir, elan_dir, output_dir,
 # =================== Top level processing functions ===========================
 
 def prepare_html(output_file, title, header, ann_note_tier, primary_color,
-                 ann_highlight_color, filter_match_color):
+                 ann_highlight_color, filter_match_color, help_file, 
+                 licence_file):
     # Decode template
     TRACE_HTML = zlib.decompress(
         base64.b64decode(TRACE_TEMPLATE.encode("utf-8"))
@@ -313,7 +343,9 @@ def prepare_html(output_file, title, header, ann_note_tier, primary_color,
                     ann_note_tier = ann_note_tier, 
                     primary_color = primary_color,
                     ann_highlight_color = ann_highlight_color,
-                    filter_match_color = filter_match_color
+                    filter_match_color = filter_match_color,
+                    help_file = help_file,
+                    licence_file = licence_file
                     )
 
 def prepare_data(output_dir, elan_dir,
@@ -334,6 +366,7 @@ def do_processing(audio_dir, elan_dir, output_dir,
                   speakers_info_file, recordings_info_file,
                   title, header, ann_note_tier, primary_color,
                   ann_highlight_color, filter_match_color,
+                  help_file, licence_file,
                   copy_audio, generate_data, generate_html,
                   report_callback, final_dir = "TrACE"):
 
@@ -387,4 +420,6 @@ def do_processing(audio_dir, elan_dir, output_dir,
                      ann_note_tier = ann_note_tier, 
                      primary_color = primary_color,
                      ann_highlight_color = ann_highlight_color,
-                     filter_match_color = filter_match_color)
+                     filter_match_color = filter_match_color,
+                     help_file = help_file,
+                     licence_file = licence_file)

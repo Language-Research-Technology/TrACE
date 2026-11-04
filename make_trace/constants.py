@@ -32,7 +32,11 @@ HELP_STRINGS = {
     "ann_highlight_color": 
         "Highlight of the currently playing annotation",
     "filter_match_color":
-        "Highlight for record buttons which match the current filters"
+        "Highlight for record buttons which match the current filters",
+    "help_file":
+        "Path to file with help text; will be interpreted as Markdown",
+    "licence_file":
+        "Path to file with licence text; will be interpreted as Markdown",
 }
 
 DEFAULTS = {
@@ -42,5 +46,5 @@ DEFAULTS = {
     "ann_note_tier": "NOTE", 
     "primary_color": "#228be6",
     "ann_highlight_color": "#faffa1",
-    "filter_match_color": "#c2fad2" 
+    "filter_match_color": "#c2fad2"
 }

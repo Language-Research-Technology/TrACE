@@ -152,6 +152,22 @@ template_group.add_argument("--filter_match_color",
                                 f"\n  Default: {DEFAULTS['filter_match_color']}\n")
                             )
 
+template_group.add_argument("--help_file",
+                            dest="help_file",
+                            type=Path,
+                            metavar="",
+                            help=(HELP_STRINGS["help_file"] + 
+                                "\n  Default: None\n")
+                            )
+
+template_group.add_argument("--licence_file",
+                            dest="licence_file",
+                            type=Path,
+                            metavar="",
+                            help=(HELP_STRINGS["licence_file"] + 
+                                "\n  Default: None\n")
+                            )
+
 processing_group = parser.add_argument_group(
     "Processing Settings",
     description="These arguments allow to skip processing steps."
