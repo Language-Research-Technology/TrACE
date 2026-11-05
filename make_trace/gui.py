@@ -386,7 +386,7 @@ def run_gui():
     # Labelled groups
     paths_frame = ttk.LabelFrame(
         main_frame,
-        text="1. Input Paths",
+        text="1. Input files",
         padding=10,
         style="Custom.TLabelframe"
     )
@@ -439,35 +439,26 @@ def run_gui():
     # function, so that they can be easily unpacked later
     #
     # Each path is shown as a read-only checklist row:
-    #   status icon | label | shortened path | info | Choose/Change [| Clear]
+    #   status icon | label | path (click to choose) | info | [remove]
+    #
+    # Only problems are coloured; rows that are fine stay quiet
 
     csv_types = [('CSV Files', '*.csv')]
     md_types = [('Markdown Files', '*.md'), ('Text Files', '*.txt')]
 
-    # (var name, label, file types or None for folders, required)
-    path_specs = [
-        ("audio_dir", "Audio folder", None, True),
-        ("elan_dir", "ELAN folder", None, True),
-        ("speakers_info_file", "Speakers CSV file", csv_types, True),
-        ("recordings_info_file", "Recordings CSV file", csv_types, True),
-        ("help_file", "Help file", md_types, False),
-        ("licence_file", "Licence file", md_types, False),
-        ("logos_file", "Logos CSV file", csv_types, False),
-        ("output_dir", "Output folder", None, True),
-    ]
-
     status_icons = {
-        "ok": ("✓", "#2b8a3e"),
+        "ok": ("✓", "#adb5bd"),
         "warn": ("!", "#e67700"),
         "error": ("✗", "#c92a2a"),
-        "unset": ("–", "#868e96"),
     }
-    info_color = "#868e96"
+    muted_color = "#868e96"
+    link_color = "#1c6fc4"
+    label_minsize = 160
 
     bold_font = default_font.copy()
     bold_font.configure(weight="bold")
-    italic_font = default_font.copy()
-    italic_font.configure(slant="italic")
+    underline_font = default_font.copy()
+    underline_font.configure(underline=True)
 
     def check_path(var_name, value):
         if var_name == "audio_dir":
@@ -485,41 +476,70 @@ def run_gui():
 
     path_rows = {}
 
+    # Filled in when the Run button is created at the bottom
+    run_controls = {}
+
     def refresh_paths(*args):
         # All rows are refreshed together, since the recordings check
         # depends on the audio and ELAN folders
-        for var_name, label, filetypes, required in path_specs:
-            row = path_rows[var_name]
+        missing = []
+        has_errors = False
+
+        for var_name, row in path_rows.items():
             value = gui_vars[var_name].get().strip()
+            noun = "folder" if row["filetypes"] is None else "file"
 
             if value:
                 status, info = check_path(var_name, value)
                 full_path = str(Path(value).resolve())
                 row["path"].configure(text=shorten_path(full_path),
-                                      font=default_font, foreground="")
-                row["path_tip"].text = full_path
-                row["button"].configure(text="Change…")
-            else:
-                status = "error" if required else "unset"
-                info = "required" if required else "optional"
-                row["path"].configure(text="not selected", font=italic_font,
-                                      foreground=info_color)
-                row["path_tip"].text = "Not selected"
-                row["button"].configure(text="Choose…")
-
-            icon, color = status_icons[status]
-            row["icon"].configure(text=icon, foreground=color)
-            row["info"].configure(
-                text=info,
-                foreground=color if status in ("warn", "error") and value
-                           else info_color
-            )
-            if "clear" in row:
-                row["clear"].configure(
-                    state="normal" if value else "disabled"
+                                      foreground="")
+                row["path_tip"].text = (f"{full_path}\n\n" +
+                                        f"Click to choose a different {noun}")
+                icon, color = status_icons[status]
+                row["icon"].configure(text=icon, foreground=color)
+                row["info"].configure(
+                    text=info,
+                    foreground=muted_color if status == "ok" else color
                 )
+                has_errors = has_errors or status == "error"
+            else:
+                row["path"].configure(text="Choose…", foreground=link_color)
+                row["path_tip"].text = f"Click to choose a {noun}"
+                row["icon"].configure(text="")
+                row["info"].configure(text="")
+                if row["required"]:
+                    # Lowercase "Audio folder", but not "ELAN folder"
+                    label = row["label"]
+                    if not label[:2].isupper():
+                        label = label[0].lower() + label[1:]
+                    missing.append(label)
 
-    for i, (var_name, label_text, filetypes, required) in enumerate(path_specs):
+            if "remove" in row:
+                if value:
+                    row["remove"].grid()
+                else:
+                    row["remove"].grid_remove()
+
+        if "button" not in run_controls:
+            return
+
+        if missing:
+            if len(missing) > 1:
+                missing = [", ".join(missing[:-1]), missing[-1]]
+            hint = f"To continue, choose the {' and '.join(missing)}."
+        elif has_errors:
+            hint = "To continue, fix the problems marked ✗."
+        else:
+            hint = "Tip: hover over any name for an explanation."
+
+        run_controls["hint"].configure(text=hint)
+        run_controls["button"].state(
+            ["disabled"] if (missing or has_errors) else ["!disabled"]
+        )
+
+    def add_path_row(parent, i, var_name, label_text, filetypes, required):
+        """Add a checklist row for one path to a grid in `parent`"""
 
         if (var_name == "output_dir"):
             var = tk.StringVar(value=DEFAULTS[var_name])
@@ -527,54 +547,74 @@ def run_gui():
             var = tk.StringVar()
 
         gui_vars[var_name] = var
-        row = {}
+        row = {"label": label_text, "filetypes": filetypes,
+               "required": required}
 
-        row["icon"] = ttk.Label(paths_frame, width=2, font=bold_font,
+        row["icon"] = ttk.Label(parent, width=2, font=bold_font,
                                 anchor="center")
         row["icon"].grid(row=i, column=0, pady=2)
 
-        label = ttk.Label(paths_frame, text=f"ⓘ {label_text}:")
+        label = ttk.Label(parent, text=label_text)
         label.grid(row=i, column=1, sticky="w", padx=(0, 10), pady=2)
         Tooltip(label, text=HELP_STRINGS[var_name], waittime=50)
-
-        row["path"] = ttk.Label(paths_frame)
-        row["path"].grid(row=i, column=2, sticky="w", padx=5, pady=2)
-        row["path_tip"] = Tooltip(row["path"], text="", waittime=50)
-
-        row["info"] = ttk.Label(paths_frame)
-        row["info"].grid(row=i, column=3, sticky="w", padx=5, pady=2)
 
         if filetypes is None:
             command = lambda v=var: browse_folder(v)
         else:
             command = lambda v=var, t=filetypes: browse_file(v, t)
 
-        row["button"] = ttk.Button(
-            paths_frame,
-            width=9,
-            style="Small.TButton",
-            command=command
-        )
-        row["button"].grid(row=i, column=4, pady=2)
+        # The path itself works as a link that opens the file dialog
+        row["path"] = ttk.Label(parent, cursor="hand2", font=default_font)
+        row["path"].grid(row=i, column=2, sticky="w", padx=5, pady=2)
+        row["path_tip"] = Tooltip(row["path"], text="", waittime=300)
+        # add="+" keeps the tooltip's own bindings
+        row["path"].bind("<Enter>",
+                         lambda e: e.widget.configure(font=underline_font),
+                         add="+")
+        row["path"].bind("<Leave>",
+                         lambda e: e.widget.configure(font=default_font),
+                         add="+")
+        row["path"].bind("<Button-1>", lambda e, c=command: c(), add="+")
+
+        row["info"] = ttk.Label(parent)
+        row["info"].grid(row=i, column=3, sticky="w", padx=5, pady=2)
 
         if not required:
-            row["clear"] = ttk.Button(
-                paths_frame,
-                text="✕",
-                width=2,
-                style="Small.TButton",
-                command=lambda v=var: v.set("")
-            )
-            row["clear"].grid(row=i, column=5, padx=(4, 0), pady=2)
-            Tooltip(row["clear"], text="Clear", waittime=50)
+            row["remove"] = ttk.Label(parent, text="✕", cursor="hand2",
+                                      foreground=muted_color)
+            row["remove"].grid(row=i, column=4, sticky="e", padx=5, pady=2)
+            row["remove"].bind("<Button-1>", lambda e, v=var: v.set(""))
+            Tooltip(row["remove"], text="Remove", waittime=50)
 
         path_rows[var_name] = row
         var.trace_add("write", refresh_paths)
 
-    paths_frame.columnconfigure(2, weight=1)
-    paths_frame.columnconfigure(3, minsize=230)
+    def configure_path_columns(parent):
+        parent.columnconfigure(1, minsize=label_minsize)
+        parent.columnconfigure(3, weight=1)
 
-    refresh_paths()
+    for i, spec in enumerate([
+        ("audio_dir", "Audio folder", None, True),
+        ("elan_dir", "ELAN folder", None, True),
+        ("speakers_info_file", "Speakers CSV file", csv_types, True),
+        ("recordings_info_file", "Recordings CSV file", csv_types, True),
+    ]):
+        add_path_row(paths_frame, i, *spec)
+
+    ttk.Label(
+        paths_frame,
+        text="Optional",
+        foreground=muted_color
+    ).grid(row=4, column=1, sticky="w", pady=(10, 2))
+
+    for i, spec in enumerate([
+        ("help_file", "Help file", md_types, False),
+        ("licence_file", "Licence file", md_types, False),
+        ("logos_file", "Logos CSV file", csv_types, False),
+    ]):
+        add_path_row(paths_frame, 5 + i, *spec)
+
+    configure_path_columns(paths_frame)
 
     # ------------------------------------------------------------------
     # HTML CONFIGURATION OPTIONS
@@ -600,7 +640,7 @@ def run_gui():
         ]
 
     for i, var_name in enumerate(text_vars):
-        label = ttk.Label(titles_frame, text=f"ⓘ {text_labels[i]}:")
+        label = ttk.Label(titles_frame, text=text_labels[i])
         label.grid(
             row=i, column=0, sticky="w", pady=5
         )
@@ -665,7 +705,7 @@ def run_gui():
 
         label = ttk.Label(
             color_frame,
-            text=f"ⓘ {color_labels[i]}:"
+            text=color_labels[i]
         )
         label.grid(row=i, column=0, sticky="w", pady=5)
         Tooltip(label, text=color_tooltips[i])
@@ -716,8 +756,15 @@ def run_gui():
     # OUTPUT OPTIONS
     # ------------------------------------------------------------------
 
+    output_path_frame = ttk.Frame(outputs_frame)
+    output_path_frame.grid(row=0, column=0, sticky="ew")
+    add_path_row(output_path_frame, 0,
+                 "output_dir", "Output folder", None, True)
+    configure_path_columns(output_path_frame)
+    outputs_frame.columnconfigure(0, weight=1)
+
     checkbox_frame = ttk.Frame(outputs_frame, height=100)
-    checkbox_frame.grid(row=0, column=0, sticky="w", pady=5)
+    checkbox_frame.grid(row=1, column=0, sticky="w", pady=5)
 
     checkbox_vars = ["copy_audio", "generate_data", "generate_html"]
     checkbox_labels = ["Copy audio files", 
@@ -729,7 +776,7 @@ def run_gui():
         "TrACE audio folder. Uncheck if the audios already have been copied and " +
         "don't need to be updated."),
 
-        ("If checked, data files will not be re-created. As data creation is " +
+        ("If checked, data files will be re-created. As data creation is " +
         "typically fast, this option can remain checked most of the time."),
 
         ("If checked, TrACE HTML page will be re-created from scratch. Uncheck " +
@@ -759,11 +806,17 @@ def run_gui():
 
     button_frame.pack(fill="x")
 
-    ttk.Button(
+    run_controls["button"] = ttk.Button(
         button_frame,
         text="Run",
         style="Custom.TButton",
         command=lambda v=gui_vars: on_run(v)
-    ).pack(side="right")
+    )
+    run_controls["button"].pack(side="right")
+
+    run_controls["hint"] = ttk.Label(button_frame, foreground=muted_color)
+    run_controls["hint"].pack(side="right", padx=10)
+
+    refresh_paths()
 
     root.mainloop()
