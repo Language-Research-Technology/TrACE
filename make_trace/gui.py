@@ -412,27 +412,25 @@ def run_gui():
         darkcolor=[("active", button_hover)]
     )
 
-    # Borderless buttons, e.g. for removing a chosen path: on cards, and
-    # on the grey background
-    for name, background in [("Ghost", card_bg), ("PlainGhost", bg_color)]:
-        style.configure(
-            f"{name}.TButton",
-            background=background,
-            foreground=muted_color,
-            bordercolor=background,
-            lightcolor=background,
-            darkcolor=background,
-            padding=(px(6), px(3)),
-            focusthickness=0,
-            focuscolor=background
-        )
-        style.map(
-            f"{name}.TButton",
-            background=[("active", button_hover)],
-            bordercolor=[("active", button_hover)],
-            lightcolor=[("active", button_hover)],
-            darkcolor=[("active", button_hover)]
-        )
+    # Borderless button, e.g. for removing a chosen path
+    style.configure(
+        "Ghost.TButton",
+        background=card_bg,
+        foreground=muted_color,
+        bordercolor=card_bg,
+        lightcolor=card_bg,
+        darkcolor=card_bg,
+        padding=(px(6), px(3)),
+        focusthickness=0,
+        focuscolor=card_bg
+    )
+    style.map(
+        "Ghost.TButton",
+        background=[("active", button_hover)],
+        bordercolor=[("active", button_hover)],
+        lightcolor=[("active", button_hover)],
+        darkcolor=[("active", button_hover)]
+    )
 
     # Flat checkboxes: a grey outline, or blue with a white tick when checked
     style.configure(
@@ -609,9 +607,9 @@ def run_gui():
     #     [icon]  Audio folder                         12 audio files
     #             …/project/audio                   [Change…] [✕]
     #
-    # + "row" for the optional files, on a line below the cards:
+    # + "row" for the optional files, as smaller one-line cards:
     #
-    #     Optional:  Help file  …/help.md  [Change…] [✕]
+    #     Help file  optional   …/help.md  [Change…] [✕]
     #
     # + "bar" for the output folder, in the bottom bar:
     #
@@ -703,9 +701,11 @@ def run_gui():
             border, icon, status_color = status_styles[status]
             tip = f"{full_path}\n\n{info}" if info else full_path
 
-            if kind == "card":
+            if "frame" in widget:
                 widget["frame"].configure(highlightbackground=border,
                                           highlightcolor=border)
+
+            if kind == "card":
                 draw_icon(widget["icon"], widget["filetypes"],
                           icon_colors["set" if value else "empty"])
                 widget["status"].configure(
@@ -779,14 +779,14 @@ def run_gui():
         return var, command, widget
 
     def add_choose_buttons(parent, var, command, widget, row, column,
-                           removable=True, remove_style="Ghost.TButton"):
+                           removable=True):
         widget["choose"] = ttk.Button(parent, width=8, style="Card.TButton",
                                       command=command)
         widget["choose"].grid(row=row, column=column, padx=(px(8), 0))
 
         if removable:
             widget["remove"] = ttk.Button(parent, text="✕", width=2,
-                                          style=remove_style,
+                                          style="Ghost.TButton",
                                           command=lambda v=var: v.set(""))
             widget["remove"].grid(row=row, column=column + 1,
                                   padx=(px(2), 0))
@@ -823,35 +823,31 @@ def run_gui():
 
         frame.columnconfigure(2, weight=1)
 
-    def add_path_row(parent, row, column, var_name, label_text, filetypes,
-                     prefix=None):
-        """
-        A single line for an optional file, on the background below the
-        cards: name, path and buttons, lined up with the card contents
-        """
+    def add_path_row(parent, row, column, var_name, label_text, filetypes):
+        """A smaller one-line card for an optional file"""
 
         var, command, widget = add_path_var(var_name, label_text, filetypes,
                                             False, "row")
 
-        frame = ttk.Frame(parent)
-        frame.grid(row=row, column=column, sticky="ew",
-                   padx=(px(17), px(4)), pady=(px(4), 0))
+        frame = make_card(parent)
+        frame.configure(pady=px(6))
+        frame.grid(row=row, column=column, sticky="nsew", padx=px(4),
+                   pady=px(4))
+        widget["frame"] = frame
 
-        if prefix:
-            ttk.Label(frame, text=prefix, style="Muted.TLabel").grid(
-                row=0, column=0, sticky="w", padx=(0, px(12))
-            )
+        title = ttk.Label(frame, text=label_text, style="CardTitle.TLabel")
+        title.grid(row=0, column=0, sticky="w", padx=(0, px(6)))
+        Tooltip(title, text=HELP_STRINGS[var_name], waittime=50)
 
-        label = ttk.Label(frame, text=label_text)
-        label.grid(row=0, column=1, sticky="w", padx=(0, px(10)))
-        Tooltip(label, text=HELP_STRINGS[var_name], waittime=50)
+        ttk.Label(frame, text="optional", style="Card.TLabel").grid(
+            row=0, column=1, sticky="w", padx=(0, px(12))
+        )
 
-        widget["path"] = ttk.Label(frame)
+        widget["path"] = ttk.Label(frame, style="Card.TLabel")
         widget["path"].grid(row=0, column=2, sticky="w")
         widget["path_tip"] = Tooltip(widget["path"], text="", waittime=50)
 
-        add_choose_buttons(frame, var, command, widget, row=0, column=3,
-                           remove_style="PlainGhost.TButton")
+        add_choose_buttons(frame, var, command, widget, row=0, column=3)
         frame.columnconfigure(2, weight=1)
 
     for i, spec in enumerate([
@@ -862,9 +858,8 @@ def run_gui():
     ]):
         add_path_card(paths_frame, i // 2, i % 2, *spec)
 
-    # Optional files, on one line below the cards
-    add_path_row(paths_frame, 2, 0, "help_file", "Help file", md_types,
-                 prefix="Optional:")
+    # Optional files, as smaller cards below
+    add_path_row(paths_frame, 2, 0, "help_file", "Help file", md_types)
     add_path_row(paths_frame, 2, 1, "licence_file", "Licence file", md_types)
     add_path_row(paths_frame, 3, 0, "logos_file", "Logos CSV file",
                  csv_types)
