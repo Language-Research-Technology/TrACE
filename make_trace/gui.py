@@ -220,10 +220,11 @@ def run_gui():
                     pad=(9, 6, 9, 6),
                     text='widget info',
                     waittime=400,
-                    wraplength=250):
+                    wraplength=None):
 
             self.waittime = waittime  # in miliseconds, originally 500
-            self.wraplength = wraplength  # in pixels, originally 180
+            # in pixels, originally 180; wide enough for a few short lines
+            self.wraplength = wraplength or px(420)
             self.widget = widget
             self.text = text
             self.widget.bind("<Enter>", self.onEnter)
@@ -391,6 +392,7 @@ def run_gui():
     style.configure("Card.TLabel", background=card_bg,
                     foreground=muted_color)
     style.configure("CardText.TLabel", background=card_bg)
+    style.configure("Box.TLabel", background=button_bg)
     style.configure("CardTitle.TLabel", background=card_bg,
                     font=(font_family, 10, "bold"))
 
@@ -508,12 +510,23 @@ def run_gui():
         header_frame,
         text="TrACE preparation",
         style="Title.TLabel"
-    ).pack(anchor="w")
+    ).grid(row=0, column=0, sticky="w")
     ttk.Label(
         header_frame,
         text="Turn your recordings and ELAN transcripts into a TrACE page.",
         style="Muted.TLabel"
-    ).pack(anchor="w")
+    ).grid(row=1, column=0, sticky="w")
+
+    # Tell people that the names have explanations, in a light blue pill
+    tk.Label(
+        header_frame,
+        text="ⓘ  Hover over any name to see what it's for",
+        bg="#e7f5ff",
+        fg="#1971c2",
+        padx=px(10),
+        pady=px(4)
+    ).grid(row=0, column=1, rowspan=2, sticky="e", padx=(0, px(4)))
+    header_frame.columnconfigure(1, weight=1)
 
     # Main layout
     #
@@ -755,7 +768,7 @@ def run_gui():
         elif has_errors:
             hint = "To continue, fix the problems marked ✗."
         else:
-            hint = "Ready. Hover over any name for an explanation."
+            hint = "Ready to create your TrACE page."
 
         run_controls["hint"].configure(text=hint)
         run_controls["button"].state(
@@ -1002,11 +1015,24 @@ def run_gui():
                                         True, "bar")
     widget["path_color"] = text_color
 
-    label = ttk.Label(button_frame, text="Save to", style="Card.TLabel")
+    label = ttk.Label(button_frame, text="Save to", style="CardTitle.TLabel")
     label.grid(row=0, column=0, sticky="w", padx=(0, px(8)))
     Tooltip(label, text=HELP_STRINGS["output_dir"], waittime=50)
 
-    widget["path"] = ttk.Label(button_frame, style="CardText.TLabel")
+    # The path in a grey box with a small folder icon; its border is tinted
+    # for problems, like the cards
+    path_box = tk.Frame(button_frame, bg=button_bg, highlightthickness=1,
+                        highlightbackground=card_border, padx=px(8),
+                        pady=px(3))
+    path_box.grid(row=0, column=1, sticky="w")
+    widget["frame"] = path_box
+
+    widget["icon"] = tk.Canvas(path_box, width=px(20), height=px(20),
+                               bg=button_bg, highlightthickness=0)
+    widget["icon"].grid(row=0, column=0, padx=(0, px(6)))
+    widget["icon_size"] = 20
+
+    widget["path"] = ttk.Label(path_box, style="Box.TLabel")
     widget["path"].grid(row=0, column=1, sticky="w")
     widget["path_tip"] = Tooltip(widget["path"], text="", waittime=50)
 
