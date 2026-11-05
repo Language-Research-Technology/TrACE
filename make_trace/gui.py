@@ -118,7 +118,7 @@ def check_output(path):
         return "error", "folder not found"
 
     if Path(path).joinpath("TrACE").is_dir():
-        return "ok", "existing TrACE/ will be updated"
+        return "ok", "existing TrACE files will be updated"
 
     return "ok", "TrACE/ will be created here"
 
