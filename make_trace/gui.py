@@ -377,7 +377,9 @@ def run_gui():
     button_bg = "#f1f3f5"
     button_hover = "#e9ecef"
     text_color = "#343a40"
-    muted_color = "#868e96"
+    # Secondary text: the lightest grey with enough contrast for reading
+    # (4.5:1, WCAG AA) on both the white cards and the grey background
+    muted_color = "#687078"
     accent_color = "#228be6"
     font_family = default_font.cget("family")
 
