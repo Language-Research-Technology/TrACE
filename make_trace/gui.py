@@ -348,37 +348,101 @@ def run_gui():
     style = ttk.Style()
     style.theme_use('clam') 
 
+    # The window is a light grey background with white cards on it. Section
+    # headings are plain bold text, and only the Run button is coloured
     bg_color = "#f5f6f8"
+    card_bg = "#ffffff"
+    card_border = "#dee2e6"
+    button_bg = "#f1f3f5"
+    button_hover = "#e9ecef"
+    text_color = "#343a40"
+    muted_color = "#868e96"
+    accent_color = "#228be6"
+    font_family = default_font.cget("family")
 
     root.configure(bg=bg_color)
-    style.configure(".", background=bg_color)
+    style.configure(".", background=bg_color, foreground=text_color)
 
+    style.configure("Section.TLabel", font=(font_family, 11, "bold"))
+    style.configure("Muted.TLabel", foreground=muted_color)
+
+    style.configure("Card.TFrame", background=card_bg)
+    style.configure("Card.TLabel", background=card_bg,
+                    foreground=muted_color)
+    style.configure("CardText.TLabel", background=card_bg)
+    style.configure("CardTitle.TLabel", background=card_bg,
+                    font=(font_family, 10, "bold"))
+
+    # Flat grey buttons inside cards
     style.configure(
-        "Custom.TLabelframe", 
-        # background="lightgray", 
-        bordercolor="navyblue", 
-        borderwidth=4,
+        "Card.TButton",
+        background=button_bg,
+        bordercolor=card_border,
+        lightcolor=button_bg,
+        darkcolor=button_bg,
+        padding=(8, 1),
+        focusthickness=0,
+        focuscolor=button_bg
+    )
+    style.map(
+        "Card.TButton",
+        background=[("active", button_hover)],
+        lightcolor=[("active", button_hover)],
+        darkcolor=[("active", button_hover)]
     )
 
-    style.configure("Custom.TLabelframe.Label", foreground="navyblue")
-
+    # Borderless button, e.g. for removing a chosen path
     style.configure(
-        'Small.TButton', 
-        padding=(6, 0), 
+        "Ghost.TButton",
+        background=card_bg,
+        foreground=muted_color,
+        bordercolor=card_bg,
+        lightcolor=card_bg,
+        darkcolor=card_bg,
+        padding=(4, 1),
         focusthickness=0,
-        focuscolor=bg_color
+        focuscolor=card_bg
+    )
+    style.map(
+        "Ghost.TButton",
+        background=[("active", button_hover)],
+        bordercolor=[("active", button_hover)],
+        lightcolor=[("active", button_hover)],
+        darkcolor=[("active", button_hover)]
     ) 
 
     style.configure(
-        "Custom.TButton", 
-        focusthickness=0,
-        focuscolor=bg_color
+        "Card.TCheckbutton",
+        background=card_bg,
+        indicatorforeground=accent_color,
+        focuscolor=card_bg
+    )
+    style.map("Card.TCheckbutton", background=[("active", card_bg)])
+
+    style.configure(
+        "TEntry",
+        fieldbackground=card_bg,
+        bordercolor=card_border,
+        lightcolor=card_bg,
+        darkcolor=card_bg,
+        padding=(4, 2)
+    )
+    style.map(
+        "TEntry",
+        bordercolor=[("focus", accent_color)],
+        lightcolor=[("focus", accent_color)]
     ) 
 
-    style.configure("TCheckbutton", focuscolor=bg_color)
+    style.configure("TSeparator", background=card_border)
 
-    # Blue button for the main action (Run, and choosing empty paths)
-    accent_color = "#228be6"
+    def make_card(parent, padding=0):
+        """A white frame with a thin border"""
+        return tk.Frame(parent, bg=card_bg, highlightthickness=1,
+                        highlightbackground=card_border,
+                        highlightcolor=card_border,
+                        padx=padding, pady=padding)
+
+    # Blue button for the main action
     style.configure(
         "Accent.TButton",
         background=accent_color,
@@ -399,65 +463,25 @@ def run_gui():
         darkcolor=[("disabled", "#ced4da"), ("active", "#1c7ed6")]
     )
 
-    # Cards for input paths
-    card_bg = "#ffffff"
-    card_border = "#dee2e6"
-    muted_color = "#868e96"
-
-    style.configure("Card.TLabel", background=card_bg,
-                    foreground=muted_color)
-    style.configure("CardTitle.TLabel", background=card_bg,
-                    font=(default_font.cget("family"), 10, "bold"))
-
     # Main layout
-    main_frame = ttk.Frame(root, padding=10)
+    main_frame = ttk.Frame(root, padding=(16, 8, 16, 0))
     main_frame.pack(fill="both", expand=True)
 
-    # Labelled groups
-    paths_frame = ttk.LabelFrame(
-        main_frame,
-        text="1. Input files",
-        padding=10,
-        style="Custom.TLabelframe"
-    )
+    # Sections: a bold heading followed by a frame for the contents
+    def add_section(i, title):
+        ttk.Label(
+            main_frame,
+            text=title,
+            style="Section.TLabel"
+        ).grid(row=2 * i, column=0, sticky="w", padx=4, pady=(10, 4))
 
-    options_frame = ttk.LabelFrame(
-        main_frame,
-        text="2. TrACE HTML options",
-        padding=10,
-        style="Custom.TLabelframe"
-    )
+        frame = ttk.Frame(main_frame)
+        frame.grid(row=2 * i + 1, column=0, sticky="nsew")
+        return frame
 
-    outputs_frame = ttk.LabelFrame(
-        main_frame,
-        text="3. Output options",
-        padding=10,
-        style="Custom.TLabelframe"
-    )
-
-    paths_frame.grid(
-        row=0,
-        column=0,
-        sticky="nsew",
-        padx=(10, 10),
-        pady=(10, 10)
-    )
-
-    options_frame.grid(
-        row=1,
-        column=0,
-        sticky="nsew",
-        padx=(10, 10),
-        pady=(10, 10)
-    )
-
-    outputs_frame.grid(
-        row=2,
-        column=0,
-        sticky="nsew",
-        padx=(10, 10),
-        pady=(10, 10)
-    )
+    paths_frame = add_section(0, "1. Input files")
+    options_frame = add_section(1, "2. TrACE page options")
+    outputs_frame = add_section(2, "3. Output")
 
     main_frame.columnconfigure(0, weight=1)
 
@@ -474,22 +498,21 @@ def run_gui():
     #   ▌         …/project/audio
     #   ▌         ✓ 12 audio files
     #
-    # The stripe on the left shows the status; empty cards have a single
-    # prominent "Choose…" button instead
+    # The stripe on the left only appears for warnings and errors
 
     csv_types = [('CSV Files', '*.csv')]
     md_types = [('Markdown Files', '*.md'), ('Text Files', '*.txt')]
 
     # (stripe and status text color, status icon)
     status_styles = {
-        "ok": ("#40c057", "✓"),
+        "ok": (card_bg, "✓"),
         "warn": ("#f59f00", "!"),
         "error": ("#e03131", "✗"),
-        "empty": ("#dee2e6", ""),
+        "empty": (card_bg, ""),
     }
     status_text_colors = {"ok": muted_color, "warn": "#e67700",
                           "error": "#c92a2a", "empty": muted_color}
-    icon_colors = {"set": "#4dabf7", "empty": "#ced4da"}
+    icon_colors = {"set": "#a5b8cc", "empty": "#dee2e6"}
 
     icon_font = tkFont.Font(family=default_font.cget("family"),
                             size=-8, weight="bold")
@@ -543,16 +566,14 @@ def run_gui():
                 full_path = str(Path(value).resolve())
                 card["path"].configure(text=shorten_path(full_path, 38))
                 card["path_tip"].text = full_path
-                card["choose"].configure(text="Change",
-                                         style="Small.TButton")
+                card["choose"].configure(text="Change…")
                 card["remove"].grid()
                 has_errors = has_errors or status == "error"
             else:
                 status, info = "empty", ""
                 card["path"].configure(text="Not chosen yet")
                 card["path_tip"].text = "Not chosen yet"
-                card["choose"].configure(text="Choose…",
-                                         style="Accent.TButton")
+                card["choose"].configure(text="Choose…")
                 card["remove"].grid_remove()
                 if card["required"]:
                     # Lowercase "Audio folder", but not "ELAN folder"
@@ -600,8 +621,7 @@ def run_gui():
         card = {"label": label_text, "filetypes": filetypes,
                 "required": required}
 
-        frame = tk.Frame(parent, bg=card_bg, highlightthickness=1,
-                         highlightbackground=card_border)
+        frame = make_card(parent)
         frame.grid(row=row, column=column, sticky="nsew", padx=4, pady=4)
 
         card["stripe"] = tk.Frame(frame, width=4)
@@ -630,11 +650,12 @@ def run_gui():
         else:
             command = lambda v=var, t=filetypes: browse_file(v, t)
 
-        card["choose"] = ttk.Button(buttons, command=command)
+        card["choose"] = ttk.Button(buttons, width=8, style="Card.TButton",
+                                    command=command)
         card["choose"].grid(row=0, column=0)
 
         card["remove"] = ttk.Button(buttons, text="✕", width=2,
-                                    style="Small.TButton",
+                                    style="Ghost.TButton",
                                     command=lambda v=var: v.set(""))
         card["remove"].grid(row=0, column=1, padx=(4, 0))
         Tooltip(card["remove"], text="Remove", waittime=50)
@@ -655,7 +676,7 @@ def run_gui():
     ttk.Label(
         paths_frame,
         text="Optional",
-        foreground=muted_color
+        style="Muted.TLabel"
     ).grid(row=2, column=0, sticky="w", padx=4, pady=(8, 0))
 
     for i, spec in enumerate([
@@ -673,8 +694,15 @@ def run_gui():
     
     # TITLES
 
-    titles_frame = ttk.Frame(options_frame, height=150)
-    titles_frame.grid(row=0, column=0, sticky="w", pady=5)
+    # All page options share one card: texts on the left, colors on the right
+    options_card = make_card(options_frame, padding=12)
+    options_card.grid(row=0, column=0, sticky="ew", padx=4, pady=4)
+    options_frame.columnconfigure(0, weight=1)
+
+    titles_frame = ttk.Frame(options_card, style="Card.TFrame")
+    titles_frame.grid(row=0, column=0, sticky="nsew")
+    titles_frame.columnconfigure(1, weight=1)
+    options_card.columnconfigure(0, weight=1)
 
     text_vars = ["title", "header", "ann_note_tier"]
     text_labels = ["TrACE browser title", "TrACE header", "Notes tier in ELAN"]
@@ -691,9 +719,10 @@ def run_gui():
         ]
 
     for i, var_name in enumerate(text_vars):
-        label = ttk.Label(titles_frame, text=text_labels[i])
+        label = ttk.Label(titles_frame, text=text_labels[i],
+                          style="CardText.TLabel")
         label.grid(
-            row=i, column=0, sticky="w", pady=5
+            row=i, column=0, sticky="w", padx=(0, 10), pady=3
         )
         Tooltip(label, text=text_tooltips[i], waittime=50)
 
@@ -703,9 +732,9 @@ def run_gui():
         entry = ttk.Entry(
             titles_frame,
             textvariable=var,
-            width=60
+            width=40
         )
-        entry.grid(row=i, column=1, pady=5, padx=5)
+        entry.grid(row=i, column=1, sticky="ew", pady=3)
         # Unfocus on Enter key
         entry.bind("<Return>", unfocus_entry)
 
@@ -713,12 +742,12 @@ def run_gui():
         entry.insert(0, text_defaults[i])
 
     # VERTICAL LINE
-    vertical_line = ttk.Separator(options_frame, orient=tk.VERTICAL)
-    vertical_line.grid(row=0, column=2, sticky="ns", padx=15, pady=10)
+    vertical_line = ttk.Separator(options_card, orient=tk.VERTICAL)
+    vertical_line.grid(row=0, column=1, sticky="ns", padx=20)
 
     # COLOR PICKERS
-    color_frame = ttk.Frame(options_frame, height=150)
-    color_frame.grid(row=0, column=3, sticky="w", pady=5)
+    color_frame = ttk.Frame(options_card, style="Card.TFrame")
+    color_frame.grid(row=0, column=2, sticky="nw")
 
     colour_vars = ["primary_color", "ann_highlight_color", "filter_match_color"]
     color_labels = ["Primary interface color", "Current annotation color", 
@@ -756,9 +785,10 @@ def run_gui():
 
         label = ttk.Label(
             color_frame,
-            text=color_labels[i]
+            text=color_labels[i],
+            style="CardText.TLabel"
         )
-        label.grid(row=i, column=0, sticky="w", pady=5)
+        label.grid(row=i, column=0, sticky="w", padx=(0, 10), pady=3)
         Tooltip(label, text=color_tooltips[i])
 
         colour_var = tk.StringVar(value=default_colors[i])
@@ -770,18 +800,19 @@ def run_gui():
             bg=default_colors[i],
             width=4,
             height=1,
-            relief="solid",
+            highlightthickness=1,
+            highlightbackground=card_border,
             cursor="hand2"
         )
-        colour_square.grid(row=i, column=1, padx=5)
+        colour_square.grid(row=i, column=1, padx=(0, 6))
 
         # Text field showing hex value
         entry = ttk.Entry(
             color_frame,
             textvariable=colour_var,
-            width=12
+            width=10
         )
-        entry.grid(row=i, column=2, padx=5)
+        entry.grid(row=i, column=2, pady=3)
         # Unfocus on Enter key
         entry.bind("<Return>", unfocus_entry)
 
@@ -799,22 +830,22 @@ def run_gui():
     ttk.Button(
         color_frame,
         text="Reset colors", 
-        style="Small.TButton",
+        style="Card.TButton",
         command=reset_colors,
-    ).grid(column=2, row=3, pady=(10,0), sticky="e")
+    ).grid(column=2, row=3, pady=(6, 0), sticky="e")
     
     # ------------------------------------------------------------------
     # OUTPUT OPTIONS
     # ------------------------------------------------------------------
 
-    # Output folder card on the left, checkboxes stacked on the right,
+    # Output folder card on the left, a card with checkboxes on the right,
     # lined up with the input cards above
     add_path_card(outputs_frame, 0, 0,
                   "output_dir", "Output folder", None, True)
     outputs_frame.columnconfigure((0, 1), weight=1, uniform="cards")
 
-    checkbox_frame = ttk.Frame(outputs_frame, height=100)
-    checkbox_frame.grid(row=0, column=1, sticky="w", padx=10)
+    checkbox_frame = make_card(outputs_frame, padding=10)
+    checkbox_frame.grid(row=0, column=1, sticky="nsew", padx=4, pady=4)
 
     checkbox_vars = ["copy_audio", "generate_data", "generate_html"]
     checkbox_labels = ["Copy audio files", 
@@ -841,7 +872,8 @@ def run_gui():
         chk = ttk.Checkbutton(
             checkbox_frame,
             text=f"{checkbox_labels[i]}",
-            variable=var
+            variable=var,
+            style="Card.TCheckbutton"
         )
         
         chk.grid(row=i, column=0, sticky="w", pady=1)
@@ -852,7 +884,8 @@ def run_gui():
     # Bottom-right Run button
     # ------------------------------------------------------------------
 
-    button_frame = ttk.Frame(root, padding=10)
+    # Right edge lines up with the cards
+    button_frame = ttk.Frame(root, padding=(20, 12, 20, 16))
 
     button_frame.pack(fill="x")
 
@@ -863,9 +896,9 @@ def run_gui():
         width=10,
         command=lambda v=gui_vars: on_run(v)
     )
-    run_controls["button"].pack(side="right", padx=(0, 10))
+    run_controls["button"].pack(side="right")
 
-    run_controls["hint"] = ttk.Label(button_frame, foreground=muted_color)
+    run_controls["hint"] = ttk.Label(button_frame, style="Muted.TLabel")
     run_controls["hint"].pack(side="right", padx=10)
 
     refresh_paths()
