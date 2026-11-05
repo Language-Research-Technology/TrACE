@@ -536,7 +536,7 @@ def run_gui():
     ).grid(row=0, column=0, padx=(0, px(6)))
     ttk.Label(
         tip_frame,
-        text="Hover over any name to see what it's for",
+        text="Hover over titles like “Audio folder” for an explanation",
         style="Muted.TLabel"
     ).grid(row=0, column=1)
     header_frame.columnconfigure(1, weight=1)
