@@ -341,8 +341,6 @@ def run_gui():
     gui_vars = {}
 
     root.title("TrACE preparation")
-    root.geometry("950x600")
-    root.minsize(950,600)
 
     default_font = tkFont.nametofont("TkDefaultFont")
     default_font.configure(size=10)
@@ -378,6 +376,38 @@ def run_gui():
     ) 
 
     style.configure("TCheckbutton", focuscolor=bg_color)
+
+    # Blue button for the main action (Run, and choosing empty paths)
+    accent_color = "#228be6"
+    style.configure(
+        "Accent.TButton",
+        background=accent_color,
+        foreground="white",
+        bordercolor=accent_color,
+        lightcolor=accent_color,
+        darkcolor=accent_color,
+        padding=(10, 2),
+        focusthickness=0,
+        focuscolor=accent_color
+    )
+    style.map(
+        "Accent.TButton",
+        background=[("disabled", "#ced4da"), ("active", "#1c7ed6")],
+        foreground=[("disabled", "#f8f9fa")],
+        bordercolor=[("disabled", "#ced4da")],
+        lightcolor=[("disabled", "#ced4da"), ("active", "#1c7ed6")],
+        darkcolor=[("disabled", "#ced4da"), ("active", "#1c7ed6")]
+    )
+
+    # Cards for input paths
+    card_bg = "#ffffff"
+    card_border = "#dee2e6"
+    muted_color = "#868e96"
+
+    style.configure("Card.TLabel", background=card_bg,
+                    foreground=muted_color)
+    style.configure("CardTitle.TLabel", background=card_bg,
+                    font=(default_font.cget("family"), 10, "bold"))
 
     # Main layout
     main_frame = ttk.Frame(root, padding=10)
@@ -438,27 +468,47 @@ def run_gui():
     # Names of the vars here and below match names of the main processing
     # function, so that they can be easily unpacked later
     #
-    # Each path is shown as a read-only checklist row:
-    #   status icon | label | path (click to choose) | info | [remove]
+    # Each path is shown as a card:
     #
-    # Only problems are coloured; rows that are fine stay quiet
+    #   ▌ [icon]  Audio folder                 [Change] [✕]
+    #   ▌         …/project/audio
+    #   ▌         ✓ 12 audio files
+    #
+    # The stripe on the left shows the status; empty cards have a single
+    # prominent "Choose…" button instead
 
     csv_types = [('CSV Files', '*.csv')]
     md_types = [('Markdown Files', '*.md'), ('Text Files', '*.txt')]
 
-    status_icons = {
-        "ok": ("✓", "#adb5bd"),
-        "warn": ("!", "#e67700"),
-        "error": ("✗", "#c92a2a"),
+    # (stripe and status text color, status icon)
+    status_styles = {
+        "ok": ("#40c057", "✓"),
+        "warn": ("#f59f00", "!"),
+        "error": ("#e03131", "✗"),
+        "empty": ("#dee2e6", ""),
     }
-    muted_color = "#868e96"
-    link_color = "#1c6fc4"
-    label_minsize = 160
+    status_text_colors = {"ok": muted_color, "warn": "#e67700",
+                          "error": "#c92a2a", "empty": muted_color}
+    icon_colors = {"set": "#4dabf7", "empty": "#ced4da"}
 
-    bold_font = default_font.copy()
-    bold_font.configure(weight="bold")
-    underline_font = default_font.copy()
-    underline_font.configure(underline=True)
+    icon_font = tkFont.Font(family=default_font.cget("family"),
+                            size=-8, weight="bold")
+
+    def draw_icon(canvas, filetypes, color):
+        """Draw a flat folder or document icon"""
+
+        canvas.delete("all")
+        if filetypes is None:
+            canvas.create_polygon(2, 7, 11, 7, 14, 10, 30, 10, 30, 27, 2, 27,
+                                  fill=color, outline="")
+        else:
+            canvas.create_polygon(6, 3, 21, 3, 28, 10, 28, 29, 6, 29,
+                                  fill=color, outline="")
+            canvas.create_polygon(21, 3, 21, 10, 28, 10,
+                                  fill=card_bg, outline="")
+            # Show the extension of the first file type, e.g. "CSV"
+            ext = filetypes[0][1].lstrip("*.").upper()
+            canvas.create_text(17, 20, text=ext, fill="white", font=icon_font)
 
     def check_path(var_name, value):
         if var_name == "audio_dir":
@@ -474,52 +524,51 @@ def run_gui():
             return check_output(value)
         return check_markdown(value)
 
-    path_rows = {}
+    path_cards = {}
 
     # Filled in when the Run button is created at the bottom
     run_controls = {}
 
     def refresh_paths(*args):
-        # All rows are refreshed together, since the recordings check
+        # All cards are refreshed together, since the recordings check
         # depends on the audio and ELAN folders
         missing = []
         has_errors = False
 
-        for var_name, row in path_rows.items():
+        for var_name, card in path_cards.items():
             value = gui_vars[var_name].get().strip()
-            noun = "folder" if row["filetypes"] is None else "file"
 
             if value:
                 status, info = check_path(var_name, value)
                 full_path = str(Path(value).resolve())
-                row["path"].configure(text=shorten_path(full_path),
-                                      foreground="")
-                row["path_tip"].text = (f"{full_path}\n\n" +
-                                        f"Click to choose a different {noun}")
-                icon, color = status_icons[status]
-                row["icon"].configure(text=icon, foreground=color)
-                row["info"].configure(
-                    text=info,
-                    foreground=muted_color if status == "ok" else color
-                )
+                card["path"].configure(text=shorten_path(full_path, 38))
+                card["path_tip"].text = full_path
+                card["choose"].configure(text="Change",
+                                         style="Small.TButton")
+                card["remove"].grid()
                 has_errors = has_errors or status == "error"
             else:
-                row["path"].configure(text="Choose…", foreground=link_color)
-                row["path_tip"].text = f"Click to choose a {noun}"
-                row["icon"].configure(text="")
-                row["info"].configure(text="")
-                if row["required"]:
+                status, info = "empty", ""
+                card["path"].configure(text="Not chosen yet")
+                card["path_tip"].text = "Not chosen yet"
+                card["choose"].configure(text="Choose…",
+                                         style="Accent.TButton")
+                card["remove"].grid_remove()
+                if card["required"]:
                     # Lowercase "Audio folder", but not "ELAN folder"
-                    label = row["label"]
+                    label = card["label"]
                     if not label[:2].isupper():
                         label = label[0].lower() + label[1:]
                     missing.append(label)
 
-            if "remove" in row:
-                if value:
-                    row["remove"].grid()
-                else:
-                    row["remove"].grid_remove()
+            stripe_color, icon = status_styles[status]
+            card["stripe"].configure(bg=stripe_color)
+            draw_icon(card["icon"], card["filetypes"],
+                      icon_colors["set" if value else "empty"])
+            card["status"].configure(
+                text=f"{icon} {info}" if info else " ",
+                foreground=status_text_colors[status]
+            )
 
         if "button" not in run_controls:
             return
@@ -538,8 +587,9 @@ def run_gui():
             ["disabled"] if (missing or has_errors) else ["!disabled"]
         )
 
-    def add_path_row(parent, i, var_name, label_text, filetypes, required):
-        """Add a checklist row for one path to a grid in `parent`"""
+    def add_path_card(parent, row, column,
+                      var_name, label_text, filetypes, required):
+        """Add a card for one path to a grid in `parent`"""
 
         if (var_name == "output_dir"):
             var = tk.StringVar(value=DEFAULTS[var_name])
@@ -547,51 +597,52 @@ def run_gui():
             var = tk.StringVar()
 
         gui_vars[var_name] = var
-        row = {"label": label_text, "filetypes": filetypes,
-               "required": required}
+        card = {"label": label_text, "filetypes": filetypes,
+                "required": required}
 
-        row["icon"] = ttk.Label(parent, width=2, font=bold_font,
-                                anchor="center")
-        row["icon"].grid(row=i, column=0, pady=2)
+        frame = tk.Frame(parent, bg=card_bg, highlightthickness=1,
+                         highlightbackground=card_border)
+        frame.grid(row=row, column=column, sticky="nsew", padx=4, pady=4)
 
-        label = ttk.Label(parent, text=label_text)
-        label.grid(row=i, column=1, sticky="w", padx=(0, 10), pady=2)
-        Tooltip(label, text=HELP_STRINGS[var_name], waittime=50)
+        card["stripe"] = tk.Frame(frame, width=4)
+        card["stripe"].grid(row=0, column=0, rowspan=3, sticky="ns")
+
+        card["icon"] = tk.Canvas(frame, width=32, height=32, bg=card_bg,
+                                 highlightthickness=0)
+        card["icon"].grid(row=0, column=1, rowspan=3, padx=(10, 8))
+
+        title = ttk.Label(frame, text=label_text, style="CardTitle.TLabel")
+        title.grid(row=0, column=2, sticky="w", pady=(6, 0))
+        Tooltip(title, text=HELP_STRINGS[var_name], waittime=50)
+
+        card["path"] = ttk.Label(frame, style="Card.TLabel")
+        card["path"].grid(row=1, column=2, sticky="w")
+        card["path_tip"] = Tooltip(card["path"], text="", waittime=50)
+
+        card["status"] = ttk.Label(frame, style="Card.TLabel")
+        card["status"].grid(row=2, column=2, sticky="w", pady=(0, 6))
+
+        buttons = tk.Frame(frame, bg=card_bg)
+        buttons.grid(row=0, column=3, rowspan=3, padx=8)
 
         if filetypes is None:
             command = lambda v=var: browse_folder(v)
         else:
             command = lambda v=var, t=filetypes: browse_file(v, t)
 
-        # The path itself works as a link that opens the file dialog
-        row["path"] = ttk.Label(parent, cursor="hand2", font=default_font)
-        row["path"].grid(row=i, column=2, sticky="w", padx=5, pady=2)
-        row["path_tip"] = Tooltip(row["path"], text="", waittime=300)
-        # add="+" keeps the tooltip's own bindings
-        row["path"].bind("<Enter>",
-                         lambda e: e.widget.configure(font=underline_font),
-                         add="+")
-        row["path"].bind("<Leave>",
-                         lambda e: e.widget.configure(font=default_font),
-                         add="+")
-        row["path"].bind("<Button-1>", lambda e, c=command: c(), add="+")
+        card["choose"] = ttk.Button(buttons, command=command)
+        card["choose"].grid(row=0, column=0)
 
-        row["info"] = ttk.Label(parent)
-        row["info"].grid(row=i, column=3, sticky="w", padx=5, pady=2)
+        card["remove"] = ttk.Button(buttons, text="✕", width=2,
+                                    style="Small.TButton",
+                                    command=lambda v=var: v.set(""))
+        card["remove"].grid(row=0, column=1, padx=(4, 0))
+        Tooltip(card["remove"], text="Remove", waittime=50)
 
-        if not required:
-            row["remove"] = ttk.Label(parent, text="✕", cursor="hand2",
-                                      foreground=muted_color)
-            row["remove"].grid(row=i, column=4, sticky="e", padx=5, pady=2)
-            row["remove"].bind("<Button-1>", lambda e, v=var: v.set(""))
-            Tooltip(row["remove"], text="Remove", waittime=50)
+        frame.columnconfigure(2, weight=1)
 
-        path_rows[var_name] = row
+        path_cards[var_name] = card
         var.trace_add("write", refresh_paths)
-
-    def configure_path_columns(parent):
-        parent.columnconfigure(1, minsize=label_minsize)
-        parent.columnconfigure(3, weight=1)
 
     for i, spec in enumerate([
         ("audio_dir", "Audio folder", None, True),
@@ -599,22 +650,22 @@ def run_gui():
         ("speakers_info_file", "Speakers CSV file", csv_types, True),
         ("recordings_info_file", "Recordings CSV file", csv_types, True),
     ]):
-        add_path_row(paths_frame, i, *spec)
+        add_path_card(paths_frame, i // 2, i % 2, *spec)
 
     ttk.Label(
         paths_frame,
         text="Optional",
         foreground=muted_color
-    ).grid(row=4, column=1, sticky="w", pady=(10, 2))
+    ).grid(row=2, column=0, sticky="w", padx=4, pady=(8, 0))
 
     for i, spec in enumerate([
         ("help_file", "Help file", md_types, False),
         ("licence_file", "Licence file", md_types, False),
         ("logos_file", "Logos CSV file", csv_types, False),
     ]):
-        add_path_row(paths_frame, 5 + i, *spec)
+        add_path_card(paths_frame, 3 + i // 2, i % 2, *spec)
 
-    configure_path_columns(paths_frame)
+    paths_frame.columnconfigure((0, 1), weight=1, uniform="cards")
 
     # ------------------------------------------------------------------
     # HTML CONFIGURATION OPTIONS
@@ -756,15 +807,14 @@ def run_gui():
     # OUTPUT OPTIONS
     # ------------------------------------------------------------------
 
-    output_path_frame = ttk.Frame(outputs_frame)
-    output_path_frame.grid(row=0, column=0, sticky="ew")
-    add_path_row(output_path_frame, 0,
-                 "output_dir", "Output folder", None, True)
-    configure_path_columns(output_path_frame)
-    outputs_frame.columnconfigure(0, weight=1)
+    # Output folder card on the left, checkboxes stacked on the right,
+    # lined up with the input cards above
+    add_path_card(outputs_frame, 0, 0,
+                  "output_dir", "Output folder", None, True)
+    outputs_frame.columnconfigure((0, 1), weight=1, uniform="cards")
 
     checkbox_frame = ttk.Frame(outputs_frame, height=100)
-    checkbox_frame.grid(row=1, column=0, sticky="w", pady=5)
+    checkbox_frame.grid(row=0, column=1, sticky="w", padx=10)
 
     checkbox_vars = ["copy_audio", "generate_data", "generate_html"]
     checkbox_labels = ["Copy audio files", 
@@ -794,7 +844,7 @@ def run_gui():
             variable=var
         )
         
-        chk.grid(row=0, column=i, padx=10)
+        chk.grid(row=i, column=0, sticky="w", pady=1)
 
         Tooltip(chk, text=checkbox_tooltips[i], waittime=50)
 
@@ -809,14 +859,19 @@ def run_gui():
     run_controls["button"] = ttk.Button(
         button_frame,
         text="Run",
-        style="Custom.TButton",
+        style="Accent.TButton",
+        width=10,
         command=lambda v=gui_vars: on_run(v)
     )
-    run_controls["button"].pack(side="right")
+    run_controls["button"].pack(side="right", padx=(0, 10))
 
     run_controls["hint"] = ttk.Label(button_frame, foreground=muted_color)
     run_controls["hint"].pack(side="right", padx=10)
 
     refresh_paths()
+
+    # Fit the window to its contents, and don't allow it to get smaller
+    root.update_idletasks()
+    root.minsize(max(950, root.winfo_reqwidth()), root.winfo_reqheight())
 
     root.mainloop()
