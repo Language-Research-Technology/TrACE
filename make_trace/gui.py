@@ -2,6 +2,8 @@ import tkinter as tk
 import tkinter.font as tkFont
 from tkinter import colorchooser, filedialog, ttk
 from pathlib import Path
+import ctypes
+import sys
 import csv
 import os
 
@@ -214,8 +216,8 @@ def run_gui():
 
         def __init__(self, widget,
                     *,
-                    bg='#FFFFEA',
-                    pad=(5, 3, 5, 3),
+                    bg='#343a40',
+                    pad=(9, 6, 9, 6),
                     text='widget info',
                     waittime=400,
                     wraplength=250):
@@ -313,6 +315,7 @@ def run_gui():
                             text=self.text,
                             justify=tk.LEFT,
                             background=bg,
+                            foreground='white',
                             relief=tk.SOLID,
                             borderwidth=0,
                             wraplength=self.wraplength)
@@ -337,13 +340,30 @@ def run_gui():
         root.focus_set()
 
     # Overall config
+
+    # Without this, Windows draws the window at 100% and stretches it on
+    # screens with display scaling, which makes everything blurry
+    if sys.platform == "win32":
+        try:
+            ctypes.windll.shcore.SetProcessDpiAwareness(1)
+        except (AttributeError, OSError):
+            pass
+
     root = tk.Tk()
     gui_vars = {}
 
     root.title("TrACE preparation")
 
+    # Fonts scale with the display, but sizes given in pixels don't, so
+    # spacing is scaled with px()
+    scale = max(1.0, root.winfo_fpixels("1i") / 96)
+
+    def px(n):
+        return round(n * scale)
+
     default_font = tkFont.nametofont("TkDefaultFont")
     default_font.configure(size=10)
+    tkFont.nametofont("TkTextFont").configure(size=10)
 
     style = ttk.Style()
     style.theme_use('clam') 
@@ -363,6 +383,7 @@ def run_gui():
     root.configure(bg=bg_color)
     style.configure(".", background=bg_color, foreground=text_color)
 
+    style.configure("Title.TLabel", font=(font_family, 16, "bold"))
     style.configure("Section.TLabel", font=(font_family, 11, "bold"))
     style.configure("Muted.TLabel", foreground=muted_color)
 
@@ -380,7 +401,7 @@ def run_gui():
         bordercolor=card_border,
         lightcolor=button_bg,
         darkcolor=button_bg,
-        padding=(8, 1),
+        padding=(px(10), px(3)),
         focusthickness=0,
         focuscolor=button_bg
     )
@@ -399,7 +420,7 @@ def run_gui():
         bordercolor=card_bg,
         lightcolor=card_bg,
         darkcolor=card_bg,
-        padding=(4, 1),
+        padding=(px(6), px(3)),
         focusthickness=0,
         focuscolor=card_bg
     )
@@ -411,13 +432,27 @@ def run_gui():
         darkcolor=[("active", button_hover)]
     ) 
 
+    # Flat checkboxes: a grey outline, or blue with a white tick when checked
     style.configure(
         "Card.TCheckbutton",
         background=card_bg,
-        indicatorforeground=accent_color,
-        focuscolor=card_bg
+        focuscolor=card_bg,
+        indicatorbackground=card_bg,
+        indicatorforeground="white",
+        upperbordercolor="#adb5bd",
+        lowerbordercolor="#adb5bd",
+        indicatormargin=(0, 0, px(8), 0),
+        padding=(0, px(2))
     )
-    style.map("Card.TCheckbutton", background=[("active", card_bg)])
+    style.map(
+        "Card.TCheckbutton",
+        background=[("active", card_bg)],
+        indicatorbackground=[("selected", accent_color)],
+        upperbordercolor=[("selected", accent_color), 
+                          ("active", accent_color)],
+        lowerbordercolor=[("selected", accent_color),
+                          ("active", accent_color)]
+    )
 
     style.configure(
         "TEntry",
@@ -425,7 +460,9 @@ def run_gui():
         bordercolor=card_border,
         lightcolor=card_bg,
         darkcolor=card_bg,
-        padding=(4, 2)
+        padding=(px(6), px(4)),
+        selectbackground="#d0ebff",
+        selectforeground=text_color
     )
     style.map(
         "TEntry",
@@ -435,12 +472,12 @@ def run_gui():
 
     style.configure("TSeparator", background=card_border)
 
-    def make_card(parent, padding=0):
+    def make_card(parent, padding=12):
         """A white frame with a thin border"""
         return tk.Frame(parent, bg=card_bg, highlightthickness=1,
                         highlightbackground=card_border,
                         highlightcolor=card_border,
-                        padx=padding, pady=padding)
+                        padx=px(padding), pady=px(padding))
 
     # Blue button for the main action
     style.configure(
@@ -450,21 +487,36 @@ def run_gui():
         bordercolor=accent_color,
         lightcolor=accent_color,
         darkcolor=accent_color,
-        padding=(10, 2),
+        padding=(px(18), px(5)),
         focusthickness=0,
         focuscolor=accent_color
     )
     style.map(
         "Accent.TButton",
-        background=[("disabled", "#ced4da"), ("active", "#1c7ed6")],
+        background=[("disabled", "#ced4da"), ("pressed", "#1971c2"),
+                    ("active", "#1c7ed6")],
         foreground=[("disabled", "#f8f9fa")],
         bordercolor=[("disabled", "#ced4da")],
         lightcolor=[("disabled", "#ced4da"), ("active", "#1c7ed6")],
         darkcolor=[("disabled", "#ced4da"), ("active", "#1c7ed6")]
     )
 
+    # Header
+    header_frame = ttk.Frame(root, padding=(px(20), px(16), px(20), 0))
+    header_frame.pack(fill="x")
+    ttk.Label(
+        header_frame,
+        text="TrACE preparation",
+        style="Title.TLabel"
+    ).pack(anchor="w")
+    ttk.Label(
+        header_frame,
+        text="Turn your recordings and ELAN transcripts into a TrACE page.",
+        style="Muted.TLabel"
+    ).pack(anchor="w")
+
     # Main layout
-    main_frame = ttk.Frame(root, padding=(16, 8, 16, 0))
+    main_frame = ttk.Frame(root, padding=(px(16), 0, px(16), px(16)))
     main_frame.pack(fill="both", expand=True)
 
     # Sections: a bold heading followed by a frame for the contents
@@ -473,7 +525,8 @@ def run_gui():
             main_frame,
             text=title,
             style="Section.TLabel"
-        ).grid(row=2 * i, column=0, sticky="w", padx=4, pady=(10, 4))
+        ).grid(row=2 * i, column=0, sticky="w", padx=px(4),
+               pady=(px(16), px(6)))
 
         frame = ttk.Frame(main_frame)
         frame.grid(row=2 * i + 1, column=0, sticky="nsew")
@@ -494,44 +547,50 @@ def run_gui():
     #
     # Each path is shown as a card:
     #
-    #   ▌ [icon]  Audio folder                 [Change] [✕]
-    #   ▌         …/project/audio
-    #   ▌         ✓ 12 audio files
+    #   [icon]  Audio folder                 [Change] [✕]
+    #           …/project/audio
+    #           ✓ 12 audio files
     #
-    # The stripe on the left only appears for warnings and errors
+    # Warnings and errors tint the border of the card
 
     csv_types = [('CSV Files', '*.csv')]
     md_types = [('Markdown Files', '*.md'), ('Text Files', '*.txt')]
 
-    # (stripe and status text color, status icon)
+    # (card border color, status icon, status text color)
     status_styles = {
-        "ok": (card_bg, "✓"),
-        "warn": ("#f59f00", "!"),
-        "error": ("#e03131", "✗"),
-        "empty": (card_bg, ""),
+        "ok": (card_border, "✓", muted_color),
+        "warn": ("#f59f00", "!", "#e67700"),
+        "error": ("#e03131", "✗", "#c92a2a"),
+        "empty": (card_border, "", muted_color),
     }
-    status_text_colors = {"ok": muted_color, "warn": "#e67700",
-                          "error": "#c92a2a", "empty": muted_color}
-    icon_colors = {"set": "#a5b8cc", "empty": "#dee2e6"}
+    # (main color, lighter color for the folded corner of files)
+    icon_colors = {"set": ("#a5b8cc", "#d2dce6"),
+                   "empty": ("#dee2e6", "#eef0f2")}
 
-    icon_font = tkFont.Font(family=default_font.cget("family"),
-                            size=-8, weight="bold")
+    icon_font = tkFont.Font(family=font_family, size=-px(8), weight="bold")
 
-    def draw_icon(canvas, filetypes, color):
-        """Draw a flat folder or document icon"""
+    def draw_icon(canvas, filetypes, colors):
+        """
+        Draw a flat folder or document icon
 
+        Only rectangles are used, since Tk draws slanted edges jagged
+        """
+
+        color, light = colors
         canvas.delete("all")
         if filetypes is None:
-            canvas.create_polygon(2, 7, 11, 7, 14, 10, 30, 10, 30, 27, 2, 27,
-                                  fill=color, outline="")
+            canvas.create_rectangle(2, 6, 13, 10, fill=color, width=0)
+            canvas.create_rectangle(2, 9, 30, 27, fill=color, width=0)
         else:
-            canvas.create_polygon(6, 3, 21, 3, 28, 10, 28, 29, 6, 29,
-                                  fill=color, outline="")
-            canvas.create_polygon(21, 3, 21, 10, 28, 10,
-                                  fill=card_bg, outline="")
+            canvas.create_rectangle(6, 2, 27, 30, fill=color, width=0)
+            canvas.create_rectangle(21, 2, 27, 8, fill=light, width=0)
+        canvas.scale("all", 0, 0, scale, scale)
+
+        if filetypes is not None:
             # Show the extension of the first file type, e.g. "CSV"
             ext = filetypes[0][1].lstrip("*.").upper()
-            canvas.create_text(17, 20, text=ext, fill="white", font=icon_font)
+            canvas.create_text(px(16), px(19), text=ext, fill="white",
+                               font=icon_font)
 
     def check_path(var_name, value):
         if var_name == "audio_dir":
@@ -582,13 +641,14 @@ def run_gui():
                         label = label[0].lower() + label[1:]
                     missing.append(label)
 
-            stripe_color, icon = status_styles[status]
-            card["stripe"].configure(bg=stripe_color)
+            border, icon, status_color = status_styles[status]
+            card["frame"].configure(highlightbackground=border,
+                                    highlightcolor=border)
             draw_icon(card["icon"], card["filetypes"],
                       icon_colors["set" if value else "empty"])
             card["status"].configure(
                 text=f"{icon} {info}" if info else " ",
-                foreground=status_text_colors[status]
+                foreground=status_color
             )
 
         if "button" not in run_controls:
@@ -622,17 +682,16 @@ def run_gui():
                 "required": required}
 
         frame = make_card(parent)
-        frame.grid(row=row, column=column, sticky="nsew", padx=4, pady=4)
+        frame.grid(row=row, column=column, sticky="nsew", padx=px(4),
+                   pady=px(4))
+        card["frame"] = frame
 
-        card["stripe"] = tk.Frame(frame, width=4)
-        card["stripe"].grid(row=0, column=0, rowspan=3, sticky="ns")
-
-        card["icon"] = tk.Canvas(frame, width=32, height=32, bg=card_bg,
-                                 highlightthickness=0)
-        card["icon"].grid(row=0, column=1, rowspan=3, padx=(10, 8))
+        card["icon"] = tk.Canvas(frame, width=px(32), height=px(32),
+                                 bg=card_bg, highlightthickness=0)
+        card["icon"].grid(row=0, column=1, rowspan=3, padx=(0, px(12)))
 
         title = ttk.Label(frame, text=label_text, style="CardTitle.TLabel")
-        title.grid(row=0, column=2, sticky="w", pady=(6, 0))
+        title.grid(row=0, column=2, sticky="w")
         Tooltip(title, text=HELP_STRINGS[var_name], waittime=50)
 
         card["path"] = ttk.Label(frame, style="Card.TLabel")
@@ -640,10 +699,10 @@ def run_gui():
         card["path_tip"] = Tooltip(card["path"], text="", waittime=50)
 
         card["status"] = ttk.Label(frame, style="Card.TLabel")
-        card["status"].grid(row=2, column=2, sticky="w", pady=(0, 6))
+        card["status"].grid(row=2, column=2, sticky="w")
 
         buttons = tk.Frame(frame, bg=card_bg)
-        buttons.grid(row=0, column=3, rowspan=3, padx=8)
+        buttons.grid(row=0, column=3, rowspan=3, padx=(px(8), 0))
 
         if filetypes is None:
             command = lambda v=var: browse_folder(v)
@@ -657,7 +716,7 @@ def run_gui():
         card["remove"] = ttk.Button(buttons, text="✕", width=2,
                                     style="Ghost.TButton",
                                     command=lambda v=var: v.set(""))
-        card["remove"].grid(row=0, column=1, padx=(4, 0))
+        card["remove"].grid(row=0, column=1, padx=(px(4), 0))
         Tooltip(card["remove"], text="Remove", waittime=50)
 
         frame.columnconfigure(2, weight=1)
@@ -677,7 +736,7 @@ def run_gui():
         paths_frame,
         text="Optional",
         style="Muted.TLabel"
-    ).grid(row=2, column=0, sticky="w", padx=4, pady=(8, 0))
+    ).grid(row=2, column=0, sticky="w", padx=px(4), pady=(px(10), 0))
 
     for i, spec in enumerate([
         ("help_file", "Help file", md_types, False),
@@ -695,8 +754,8 @@ def run_gui():
     # TITLES
 
     # All page options share one card: texts on the left, colors on the right
-    options_card = make_card(options_frame, padding=12)
-    options_card.grid(row=0, column=0, sticky="ew", padx=4, pady=4)
+    options_card = make_card(options_frame, padding=14)
+    options_card.grid(row=0, column=0, sticky="ew", padx=px(4), pady=px(4))
     options_frame.columnconfigure(0, weight=1)
 
     titles_frame = ttk.Frame(options_card, style="Card.TFrame")
@@ -722,7 +781,7 @@ def run_gui():
         label = ttk.Label(titles_frame, text=text_labels[i],
                           style="CardText.TLabel")
         label.grid(
-            row=i, column=0, sticky="w", padx=(0, 10), pady=3
+            row=i, column=0, sticky="w", padx=(0, px(12)), pady=px(4)
         )
         Tooltip(label, text=text_tooltips[i], waittime=50)
 
@@ -734,7 +793,7 @@ def run_gui():
             textvariable=var,
             width=40
         )
-        entry.grid(row=i, column=1, sticky="ew", pady=3)
+        entry.grid(row=i, column=1, sticky="ew", pady=px(4))
         # Unfocus on Enter key
         entry.bind("<Return>", unfocus_entry)
 
@@ -743,7 +802,7 @@ def run_gui():
 
     # VERTICAL LINE
     vertical_line = ttk.Separator(options_card, orient=tk.VERTICAL)
-    vertical_line.grid(row=0, column=1, sticky="ns", padx=20)
+    vertical_line.grid(row=0, column=1, sticky="ns", padx=px(24))
 
     # COLOR PICKERS
     color_frame = ttk.Frame(options_card, style="Card.TFrame")
@@ -788,7 +847,7 @@ def run_gui():
             text=color_labels[i],
             style="CardText.TLabel"
         )
-        label.grid(row=i, column=0, sticky="w", padx=(0, 10), pady=3)
+        label.grid(row=i, column=0, sticky="w", padx=(0, px(12)), pady=px(4))
         Tooltip(label, text=color_tooltips[i])
 
         colour_var = tk.StringVar(value=default_colors[i])
@@ -804,7 +863,7 @@ def run_gui():
             highlightbackground=card_border,
             cursor="hand2"
         )
-        colour_square.grid(row=i, column=1, padx=(0, 6))
+        colour_square.grid(row=i, column=1, padx=(0, px(6)))
 
         # Text field showing hex value
         entry = ttk.Entry(
@@ -812,7 +871,7 @@ def run_gui():
             textvariable=colour_var,
             width=10
         )
-        entry.grid(row=i, column=2, pady=3)
+        entry.grid(row=i, column=2, pady=px(4))
         # Unfocus on Enter key
         entry.bind("<Return>", unfocus_entry)
 
@@ -832,7 +891,7 @@ def run_gui():
         text="Reset colors", 
         style="Card.TButton",
         command=reset_colors,
-    ).grid(column=2, row=3, pady=(6, 0), sticky="e")
+    ).grid(column=2, row=3, pady=(px(6), 0), sticky="e")
     
     # ------------------------------------------------------------------
     # OUTPUT OPTIONS
@@ -844,8 +903,9 @@ def run_gui():
                   "output_dir", "Output folder", None, True)
     outputs_frame.columnconfigure((0, 1), weight=1, uniform="cards")
 
-    checkbox_frame = make_card(outputs_frame, padding=10)
-    checkbox_frame.grid(row=0, column=1, sticky="nsew", padx=4, pady=4)
+    checkbox_frame = make_card(outputs_frame)
+    checkbox_frame.grid(row=0, column=1, sticky="nsew", padx=px(4),
+                        pady=px(4))
 
     checkbox_vars = ["copy_audio", "generate_data", "generate_html"]
     checkbox_labels = ["Copy audio files", 
@@ -876,17 +936,22 @@ def run_gui():
             style="Card.TCheckbutton"
         )
         
-        chk.grid(row=i, column=0, sticky="w", pady=1)
+        chk.grid(row=i, column=0, sticky="w", pady=px(1))
 
         Tooltip(chk, text=checkbox_tooltips[i], waittime=50)
 
     # ------------------------------------------------------------------
-    # Bottom-right Run button
+    # Bottom bar with the Run button
     # ------------------------------------------------------------------
 
-    # Right edge lines up with the cards
-    button_frame = ttk.Frame(root, padding=(20, 12, 20, 16))
+    # A white bar with a thin line above it; the right edge lines up with
+    # the cards
+    footer = tk.Frame(root, bg=card_bg)
+    footer.pack(fill="x", side="bottom")
+    tk.Frame(footer, height=1, bg=card_border).pack(fill="x")
 
+    button_frame = ttk.Frame(footer, style="Card.TFrame",
+                             padding=(px(20), px(12), px(20), px(12)))
     button_frame.pack(fill="x")
 
     run_controls["button"] = ttk.Button(
@@ -898,13 +963,13 @@ def run_gui():
     )
     run_controls["button"].pack(side="right")
 
-    run_controls["hint"] = ttk.Label(button_frame, style="Muted.TLabel")
-    run_controls["hint"].pack(side="right", padx=10)
+    run_controls["hint"] = ttk.Label(button_frame, style="Card.TLabel")
+    run_controls["hint"].pack(side="right", padx=px(12))
 
     refresh_paths()
 
     # Fit the window to its contents, and don't allow it to get smaller
     root.update_idletasks()
-    root.minsize(max(950, root.winfo_reqwidth()), root.winfo_reqheight())
+    root.minsize(max(px(900), root.winfo_reqwidth()), root.winfo_reqheight())
 
     root.mainloop()
