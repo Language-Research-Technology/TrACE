@@ -2,10 +2,123 @@ import tkinter as tk
 import tkinter.font as tkFont
 from tkinter import colorchooser, filedialog, ttk
 from pathlib import Path
-import re
+import csv
+import os
 
 from constants import HELP_STRINGS, DEFAULTS
 from processing import do_processing
+
+AUDIO_EXTENSIONS = {".mp3", ".wav", ".ogg", ".m4a", ".flac", ".aac", ".opus"}
+RECORDINGS_COLUMNS = ["audio_file", "elan_file", "display_name"]
+
+# ------------------------------------------------------------------
+# PATH CHECKS
+#
+# Each check returns a (status, info) tuple, where status is one of
+# "ok", "warn" or "error", and info is a short text shown next to the path
+# ------------------------------------------------------------------
+
+def shorten_path(path, max_len=40):
+    """Shorten a path from the left, keeping as many trailing parts as fit"""
+
+    if len(path) <= max_len:
+        return path
+
+    parts = Path(path).parts
+    tail = parts[-1]
+
+    if len(tail) + 2 > max_len:
+        return "…" + tail[-(max_len - 1):]
+
+    for part in reversed(parts[1:-1]):
+        candidate = os.path.join(part, tail)
+        if len(candidate) + 2 > max_len:
+            break
+        tail = candidate
+
+    return os.path.join("…", tail)
+
+def plural(n, noun):
+    return f"{n} {noun}{'' if n == 1 else 's'}"
+
+def read_csv(path):
+    """Read a CSV the same way processing does; return (columns, rows)"""
+
+    with open(Path(path), mode='r', encoding='utf-8') as file:
+        reader = csv.DictReader(file)
+        rows = list(reader)
+        return (reader.fieldnames or []), rows
+
+def check_folder(path, extensions, noun):
+    folder = Path(path)
+    if not folder.is_dir():
+        return "error", "folder not found"
+
+    n = sum(1 for f in folder.iterdir()
+            if f.is_file() and f.suffix.lower() in extensions)
+    if n == 0:
+        return "warn", f"no {noun} files found"
+
+    return "ok", plural(n, f"{noun} file")
+
+def check_speakers(path):
+    if not Path(path).is_file():
+        return "error", "file not found"
+
+    try:
+        columns, rows = read_csv(path)
+    except (OSError, UnicodeDecodeError, csv.Error):
+        return "error", "cannot read as UTF-8 CSV"
+
+    if "Name" not in columns:
+        return "error", "no 'Name' column"
+
+    return "ok", plural(len(rows), "speaker")
+
+def check_recordings(path, audio_dir, elan_dir):
+    if not Path(path).is_file():
+        return "error", "file not found"
+
+    try:
+        columns, rows = read_csv(path)
+    except (OSError, UnicodeDecodeError, csv.Error):
+        return "error", "cannot read as UTF-8 CSV"
+
+    missing_columns = [c for c in RECORDINGS_COLUMNS if c not in columns]
+    if missing_columns:
+        return "error", f"no column(s): {', '.join(missing_columns)}"
+
+    info = plural(len(rows), "recording")
+
+    # Cross-check against the selected folders, if they are valid
+    missing = []
+    for column, folder, noun in [("audio_file", audio_dir, "audio"),
+                                 ("elan_file", elan_dir, "ELAN")]:
+        if folder and Path(folder).is_dir():
+            n = sum(1 for row in rows
+                    if not Path(folder).joinpath(row[column] or "").is_file())
+            if n:
+                missing.append(f"{n} {noun}")
+
+    if missing:
+        return "warn", f"{info} · missing {', '.join(missing)}"
+
+    return "ok", info
+
+def check_markdown(path):
+    if not Path(path).is_file():
+        return "error", "file not found"
+
+    return "ok", ""
+
+def check_output(path):
+    if not Path(path).is_dir():
+        return "error", "folder not found"
+
+    if Path(path).joinpath("TrACE").is_dir():
+        return "ok", "existing TrACE/ will be updated"
+
+    return "ok", "TrACE/ will be created here"
 
 def run_gui():
 
@@ -27,33 +140,30 @@ def run_gui():
         do_processing(**input_vars)
 
 
-    def browse_file(entry_widget):
+    def browse_file(var, filetypes):
         """Select a file"""
 
-        cur_entry = entry_widget.get()
+        cur_value = var.get()
 
-        if (Path(cur_entry).is_file()):
-            initial_dir = Path(cur_entry).parent
+        if (cur_value and Path(cur_value).is_file()):
+            initial_dir = Path(cur_value).parent
         else:
             initial_dir = Path.cwd()
 
-        choice = filedialog.askopenfilename(title="Select File", 
-                                            filetypes=[('CSV Files', 
-                                                        '*.csv'),
-                                                        ('All Files', 
-                                                        '*.*')],
+        choice = filedialog.askopenfilename(title="Select File",
+                                            filetypes=filetypes +
+                                                [('All Files', '*.*')],
                                             initialdir=initial_dir)
 
         if choice:
-            entry_widget.delete(0, tk.END)
-            entry_widget.insert(0, choice)
+            var.set(choice)
 
-    def browse_folder(entry_widget):
+    def browse_folder(var):
         """Select a folder"""
 
-        cur_entry = entry_widget.get()
-        if (Path(cur_entry).is_dir()):
-            initial_dir = Path(cur_entry)
+        cur_value = var.get()
+        if (cur_value and Path(cur_value).is_dir()):
+            initial_dir = Path(cur_value)
         else:
             initial_dir = Path.cwd()
 
@@ -63,8 +173,7 @@ def run_gui():
                                         )
 
         if choice:
-            entry_widget.delete(0, tk.END)
-            entry_widget.insert(0, choice)
+            var.set(choice)
 
     def pick_color(color_var, button):
         """Open colour picker"""
@@ -232,8 +341,8 @@ def run_gui():
     gui_vars = {}
 
     root.title("TrACE preparation")
-    root.geometry("950x640")
-    root.minsize(950,640)
+    root.geometry("950x600")
+    root.minsize(950,600)
 
     default_font = tkFont.nametofont("TkDefaultFont")
     default_font.configure(size=10)
@@ -326,65 +435,146 @@ def run_gui():
     # FILE SELECTORS
     # ------------------------------------------------------------------
 
-    # Names of the vars here and below match names of the main processing 
+    # Names of the vars here and below match names of the main processing
     # function, so that they can be easily unpacked later
-    
-    path_vars = ["audio_dir", "elan_dir", "speakers_info_file",
-                 "recordings_info_file", 
-                 "help_file", "licence_file", "logos_file",
-                 "output_dir"]
-    path_labels = ["Audio folder", "Elan folder", 
-                   "Speakers CSV file", "Recordings CSV file",
-                   "Help file (optional)", "Licence file (optional)",
-                   "Logos CSV file (optional)",
-                   "Output folder"]
-    path_tooltips = [
-        HELP_STRINGS["audio_dir"],
-        HELP_STRINGS["elan_dir"],
-        HELP_STRINGS["speakers_info_file"],
-        HELP_STRINGS["recordings_info_file"],
-        HELP_STRINGS["help_file"],
-        HELP_STRINGS["licence_file"],
-        HELP_STRINGS["logos_file"],
-        HELP_STRINGS["output_dir"]
-        ]
+    #
+    # Each path is shown as a read-only checklist row:
+    #   status icon | label | shortened path | info | Choose/Change [| Clear]
 
-    for i, var_name in enumerate(path_vars):
+    csv_types = [('CSV Files', '*.csv')]
+    md_types = [('Markdown Files', '*.md'), ('Text Files', '*.txt')]
 
-        label = ttk.Label(paths_frame, text=f"ⓘ {path_labels[i]}:") 
-        label.grid(
-            row=i, column=0, sticky="w", pady=5
-        )
-        Tooltip(label, text=path_tooltips[i], waittime=50)
+    # (var name, label, file types or None for folders, required)
+    path_specs = [
+        ("audio_dir", "Audio folder", None, True),
+        ("elan_dir", "ELAN folder", None, True),
+        ("speakers_info_file", "Speakers CSV file", csv_types, True),
+        ("recordings_info_file", "Recordings CSV file", csv_types, True),
+        ("help_file", "Help file", md_types, False),
+        ("licence_file", "Licence file", md_types, False),
+        ("logos_file", "Logos CSV file", csv_types, False),
+        ("output_dir", "Output folder", None, True),
+    ]
+
+    status_icons = {
+        "ok": ("✓", "#2b8a3e"),
+        "warn": ("!", "#e67700"),
+        "error": ("✗", "#c92a2a"),
+        "unset": ("–", "#868e96"),
+    }
+    info_color = "#868e96"
+
+    bold_font = default_font.copy()
+    bold_font.configure(weight="bold")
+    italic_font = default_font.copy()
+    italic_font.configure(slant="italic")
+
+    def check_path(var_name, value):
+        if var_name == "audio_dir":
+            return check_folder(value, AUDIO_EXTENSIONS, "audio")
+        if var_name == "elan_dir":
+            return check_folder(value, {".eaf"}, "ELAN")
+        if var_name == "speakers_info_file":
+            return check_speakers(value)
+        if var_name == "recordings_info_file":
+            return check_recordings(value, gui_vars["audio_dir"].get(),
+                                    gui_vars["elan_dir"].get())
+        if var_name == "output_dir":
+            return check_output(value)
+        return check_markdown(value)
+
+    path_rows = {}
+
+    def refresh_paths(*args):
+        # All rows are refreshed together, since the recordings check
+        # depends on the audio and ELAN folders
+        for var_name, label, filetypes, required in path_specs:
+            row = path_rows[var_name]
+            value = gui_vars[var_name].get().strip()
+
+            if value:
+                status, info = check_path(var_name, value)
+                full_path = str(Path(value).resolve())
+                row["path"].configure(text=shorten_path(full_path),
+                                      font=default_font, foreground="")
+                row["path_tip"].text = full_path
+                row["button"].configure(text="Change…")
+            else:
+                status = "error" if required else "unset"
+                info = "required" if required else "optional"
+                row["path"].configure(text="not selected", font=italic_font,
+                                      foreground=info_color)
+                row["path_tip"].text = "Not selected"
+                row["button"].configure(text="Choose…")
+
+            icon, color = status_icons[status]
+            row["icon"].configure(text=icon, foreground=color)
+            row["info"].configure(
+                text=info,
+                foreground=color if status in ("warn", "error") and value
+                           else info_color
+            )
+            if "clear" in row:
+                row["clear"].configure(
+                    state="normal" if value else "disabled"
+                )
+
+    for i, (var_name, label_text, filetypes, required) in enumerate(path_specs):
 
         if (var_name == "output_dir"):
             var = tk.StringVar(value=DEFAULTS[var_name])
         else:
             var = tk.StringVar()
-            
+
         gui_vars[var_name] = var
+        row = {}
 
-        entry = ttk.Entry(paths_frame, textvariable=var, width=50)
-        entry.grid(row=i, column=1, padx=5, pady=5, sticky="ew")
-        # Unfocus on Enter key
-        entry.bind("<Return>", unfocus_entry)
+        row["icon"] = ttk.Label(paths_frame, width=2, font=bold_font,
+                                anchor="center")
+        row["icon"].grid(row=i, column=0, pady=2)
 
-        if re.search("folder", path_labels[i]):
-            ttk.Button(
-                paths_frame,
-                text="Browse...",
-                style="Small.TButton",
-                command=lambda e=entry: browse_folder(e)
-            ).grid(row=i, column=2, ipady=0, pady=5)
+        label = ttk.Label(paths_frame, text=f"ⓘ {label_text}:")
+        label.grid(row=i, column=1, sticky="w", padx=(0, 10), pady=2)
+        Tooltip(label, text=HELP_STRINGS[var_name], waittime=50)
+
+        row["path"] = ttk.Label(paths_frame)
+        row["path"].grid(row=i, column=2, sticky="w", padx=5, pady=2)
+        row["path_tip"] = Tooltip(row["path"], text="", waittime=50)
+
+        row["info"] = ttk.Label(paths_frame)
+        row["info"].grid(row=i, column=3, sticky="w", padx=5, pady=2)
+
+        if filetypes is None:
+            command = lambda v=var: browse_folder(v)
         else:
-            ttk.Button(
+            command = lambda v=var, t=filetypes: browse_file(v, t)
+
+        row["button"] = ttk.Button(
+            paths_frame,
+            width=9,
+            style="Small.TButton",
+            command=command
+        )
+        row["button"].grid(row=i, column=4, pady=2)
+
+        if not required:
+            row["clear"] = ttk.Button(
                 paths_frame,
-                text="Browse...",
+                text="✕",
+                width=2,
                 style="Small.TButton",
-                command=lambda e=entry: browse_file(e)
-            ).grid(row=i, column=2, ipady=0, pady=5)
-        
-    paths_frame.columnconfigure(1, weight=1)
+                command=lambda v=var: v.set("")
+            )
+            row["clear"].grid(row=i, column=5, padx=(4, 0), pady=2)
+            Tooltip(row["clear"], text="Clear", waittime=50)
+
+        path_rows[var_name] = row
+        var.trace_add("write", refresh_paths)
+
+    paths_frame.columnconfigure(2, weight=1)
+    paths_frame.columnconfigure(3, minsize=230)
+
+    refresh_paths()
 
     # ------------------------------------------------------------------
     # HTML CONFIGURATION OPTIONS
