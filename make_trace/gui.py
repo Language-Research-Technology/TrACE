@@ -411,11 +411,13 @@ def run_gui():
         focusthickness=0,
         focuscolor=button_bg
     )
+    # Disabled buttons keep their shape, with lighter text and no hover
     style.map(
         "Card.TButton",
-        background=[("active", button_hover)],
-        lightcolor=[("active", button_hover)],
-        darkcolor=[("active", button_hover)]
+        foreground=[("disabled", "#adb5bd")],
+        background=[("disabled", button_bg), ("active", button_hover)],
+        lightcolor=[("disabled", button_bg), ("active", button_hover)],
+        darkcolor=[("disabled", button_bg), ("active", button_hover)]
     )
 
     # Borderless button, e.g. for removing a chosen path
@@ -1003,12 +1005,24 @@ def run_gui():
             lambda event, v=colour_var: pick_colour(event, v)
         )
 
-    ttk.Button(
+    reset_button = ttk.Button(
         swatches_frame,
         text="Reset",
-        style="Ghost.TButton",
+        style="Card.TButton",
         command=reset_colors,
-    ).grid(row=0, column=3, padx=(px(4), 0))
+    )
+    reset_button.grid(row=0, column=3, padx=(px(4), 0))
+    Tooltip(reset_button, text="Go back to the default colors", waittime=50)
+
+    def update_reset_button(*args):
+        # Only enabled when some color differs from its default
+        changed = any(gui_vars[k].get().lower() != DEFAULTS[k].lower()
+                      for k in colour_vars)
+        reset_button.state(["!disabled"] if changed else ["disabled"])
+
+    for var_name in colour_vars:
+        gui_vars[var_name].trace_add("write", update_reset_button)
+    update_reset_button()
 
     # ------------------------------------------------------------------
     # Bottom bar: output folder, output options and the Run button
