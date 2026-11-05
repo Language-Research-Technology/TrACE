@@ -392,7 +392,9 @@ def run_gui():
     style.configure("Card.TLabel", background=card_bg,
                     foreground=muted_color)
     style.configure("CardText.TLabel", background=card_bg)
-    style.configure("Box.TLabel", background=button_bg)
+    # Small grey uppercase captions, e.g. "SAVE TO"
+    style.configure("Caption.TLabel", background=card_bg,
+                    foreground=muted_color, font=(font_family, 8, "bold"))
     style.configure("CardTitle.TLabel", background=card_bg,
                     font=(font_family, 10, "bold"))
 
@@ -624,9 +626,11 @@ def run_gui():
     #
     #     Help file  optional   …/help.md  [Change…] [✕]
     #
-    # + "bar" for the output folder, in the bottom bar:
+    # + "bar" for the output folder, in the bottom bar, showing the TrACE
+    #   folder that will be created inside it:
     #
-    #     Save to  …/project  [Change…]
+    #     [icon]  SAVE TO           [Change…]
+    #             …/project/TrACE
     #
     # Warnings and errors tint the border of a card, or the path text
 
@@ -737,12 +741,15 @@ def run_gui():
                 # Rows and the bottom bar have no room for the info, so
                 # it goes into the tooltip, and only problems are coloured
                 max_len = 18 if kind == "row" else 32
+                shown_path = full_path
+                if kind == "bar" and value:
+                    shown_path = str(Path(full_path).joinpath("TrACE"))
                 if not value:
                     text = "Not chosen"
                 elif status == "ok":
-                    text = shorten_path(full_path, max_len)
+                    text = shorten_path(shown_path, max_len)
                 else:
-                    text = f"{icon} {shorten_path(full_path, max_len)}"
+                    text = f"{icon} {shorten_path(shown_path, max_len)}"
                 widget["path"].configure(
                     text=text,
                     foreground=status_color if status in ("warn", "error")
@@ -1015,29 +1022,23 @@ def run_gui():
                                         True, "bar")
     widget["path_color"] = text_color
 
-    label = ttk.Label(button_frame, text="Save to", style="CardTitle.TLabel")
-    label.grid(row=0, column=0, sticky="w", padx=(0, px(8)))
-    Tooltip(label, text=HELP_STRINGS["output_dir"], waittime=50)
-
-    # The path in a grey box with a small folder icon; its border is tinted
-    # for problems, like the cards
-    path_box = tk.Frame(button_frame, bg=button_bg, highlightthickness=1,
-                        highlightbackground=card_border, padx=px(8),
-                        pady=px(3))
-    path_box.grid(row=0, column=1, sticky="w")
-    widget["frame"] = path_box
-
-    widget["icon"] = tk.Canvas(path_box, width=px(20), height=px(20),
-                               bg=button_bg, highlightthickness=0)
-    widget["icon"].grid(row=0, column=0, padx=(0, px(6)))
+    # Like the cards: a small folder icon, a caption and the path
+    widget["icon"] = tk.Canvas(button_frame, width=px(20), height=px(20),
+                               bg=card_bg, highlightthickness=0)
+    widget["icon"].grid(row=0, column=0, rowspan=2, padx=(0, px(10)))
     widget["icon_size"] = 20
 
-    widget["path"] = ttk.Label(path_box, style="Box.TLabel")
-    widget["path"].grid(row=0, column=1, sticky="w")
+    caption = ttk.Label(button_frame, text="SAVE TO", style="Caption.TLabel")
+    caption.grid(row=0, column=1, sticky="sw")
+    Tooltip(caption, text=HELP_STRINGS["output_dir"], waittime=50)
+
+    widget["path"] = ttk.Label(button_frame, style="CardText.TLabel")
+    widget["path"].grid(row=1, column=1, sticky="nw")
     widget["path_tip"] = Tooltip(widget["path"], text="", waittime=50)
 
     add_choose_buttons(button_frame, var, command, widget, row=0, column=2,
                        removable=False)
+    widget["choose"].grid(rowspan=2, padx=(px(16), 0))
 
     # Output options, in a small window of their own, since they are
     # rarely changed
@@ -1102,7 +1103,7 @@ def run_gui():
 
     options_button = ttk.Button(button_frame, style="Card.TButton",
                                 command=open_output_options)
-    options_button.grid(row=0, column=4, padx=(px(8), 0))
+    options_button.grid(row=0, column=4, rowspan=2, padx=(px(8), 0))
 
     def update_options_button(*args):
         # Show when some steps are turned off, so it's not forgotten
@@ -1118,7 +1119,8 @@ def run_gui():
     # Run button, with a hint about what's missing
     run_controls["hint"] = ttk.Label(button_frame, style="Card.TLabel",
                                      wraplength=px(300), justify="right")
-    run_controls["hint"].grid(row=0, column=5, sticky="e", padx=px(12))
+    run_controls["hint"].grid(row=0, column=5, rowspan=2, sticky="e",
+                              padx=px(12))
 
     run_controls["button"] = ttk.Button(
         button_frame,
@@ -1127,7 +1129,7 @@ def run_gui():
         width=10,
         command=lambda v=gui_vars: on_run(v)
     )
-    run_controls["button"].grid(row=0, column=6, sticky="e")
+    run_controls["button"].grid(row=0, column=6, rowspan=2, sticky="e")
 
     button_frame.columnconfigure(5, weight=1)
 
