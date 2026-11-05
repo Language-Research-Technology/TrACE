@@ -120,7 +120,7 @@ def check_output(path):
     if Path(path).joinpath("TrACE").is_dir():
         return "ok", "existing TrACE files will be updated"
 
-    return "ok", "TrACE/ will be created here"
+    return "ok", "TrACE files will be created here"
 
 def run_gui():
 
