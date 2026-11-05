@@ -633,11 +633,12 @@ def run_gui():
 
     icon_font = tkFont.Font(family=font_family, size=-px(8), weight="bold")
 
-    def draw_icon(canvas, filetypes, colors):
+    def draw_icon(canvas, filetypes, colors, size=32):
         """
         Draw a flat folder or document icon
 
-        Only rectangles are used, since Tk draws slanted edges jagged
+        Only rectangles are used, since Tk draws slanted edges jagged. Icons
+        smaller than 32 pixels have no file type label, as it'd be unreadable
         """
 
         color, light = colors
@@ -648,9 +649,9 @@ def run_gui():
         else:
             canvas.create_rectangle(6, 2, 27, 30, fill=color, width=0)
             canvas.create_rectangle(21, 2, 27, 8, fill=light, width=0)
-        canvas.scale("all", 0, 0, scale, scale)
+        canvas.scale("all", 0, 0, scale * size / 32, scale * size / 32)
 
-        if filetypes is not None:
+        if filetypes is not None and size >= 32:
             # Show the extension of the first file type, e.g. "CSV"
             ext = filetypes[0][1].lstrip("*.").upper()
             canvas.create_text(px(16), px(19), text=ext, fill="white",
@@ -705,9 +706,12 @@ def run_gui():
                 widget["frame"].configure(highlightbackground=border,
                                           highlightcolor=border)
 
-            if kind == "card":
+            if "icon" in widget:
                 draw_icon(widget["icon"], widget["filetypes"],
-                          icon_colors["set" if value else "empty"])
+                          icon_colors["set" if value else "empty"],
+                          widget["icon_size"])
+
+            if kind == "card":
                 widget["status"].configure(
                     text=f"{icon} {info}" if info else "",
                     foreground=status_color
@@ -807,6 +811,7 @@ def run_gui():
         widget["icon"] = tk.Canvas(frame, width=px(32), height=px(32),
                                    bg=card_bg, highlightthickness=0)
         widget["icon"].grid(row=0, column=0, rowspan=2, padx=(0, px(12)))
+        widget["icon_size"] = 32
 
         title = ttk.Label(frame, text=label_text, style="CardTitle.TLabel")
         title.grid(row=0, column=1, sticky="w")
@@ -835,20 +840,28 @@ def run_gui():
                    pady=px(4))
         widget["frame"] = frame
 
+        # A smaller icon, centered in a column as wide as the big icons
+        # (plus spacing), so that the names line up with the card titles above
+        widget["icon"] = tk.Canvas(frame, width=px(20), height=px(20),
+                                   bg=card_bg, highlightthickness=0)
+        widget["icon"].grid(row=0, column=0, padx=(0, px(12)))
+        widget["icon_size"] = 20
+        frame.columnconfigure(0, minsize=px(32 + 12))
+
         title = ttk.Label(frame, text=label_text, style="CardTitle.TLabel")
-        title.grid(row=0, column=0, sticky="w", padx=(0, px(6)))
+        title.grid(row=0, column=1, sticky="w", padx=(0, px(6)))
         Tooltip(title, text=HELP_STRINGS[var_name], waittime=50)
 
         ttk.Label(frame, text="optional", style="Card.TLabel").grid(
-            row=0, column=1, sticky="w", padx=(0, px(12))
+            row=0, column=2, sticky="w", padx=(0, px(12))
         )
 
         widget["path"] = ttk.Label(frame, style="Card.TLabel")
-        widget["path"].grid(row=0, column=2, sticky="w")
+        widget["path"].grid(row=0, column=3, sticky="w")
         widget["path_tip"] = Tooltip(widget["path"], text="", waittime=50)
 
-        add_choose_buttons(frame, var, command, widget, row=0, column=3)
-        frame.columnconfigure(2, weight=1)
+        add_choose_buttons(frame, var, command, widget, row=0, column=4)
+        frame.columnconfigure(3, weight=1)
 
     for i, spec in enumerate([
         ("audio_dir", "Audio folder", None, True),
