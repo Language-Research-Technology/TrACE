@@ -516,8 +516,64 @@ def run_gui():
     ).pack(anchor="w")
 
     # Main layout
-    main_frame = ttk.Frame(root, padding=(px(16), 0, px(16), px(16)))
-    main_frame.pack(fill="both", expand=True)
+    #
+    # The sections are inside a canvas, so that they can scroll when the
+    # window doesn't fit on the screen (e.g. on laptops). The header and the
+    # bottom bar stay in place, and the scrollbar only appears when needed
+    body = ttk.Frame(root)
+    body.pack(fill="both", expand=True)
+
+    body_canvas = tk.Canvas(body, bg=bg_color, highlightthickness=0,
+                            borderwidth=0)
+    body_canvas.grid(row=0, column=0, sticky="nsew")
+    body_scrollbar = ttk.Scrollbar(body, orient="vertical",
+                                   command=body_canvas.yview)
+    body_scrollbar.grid(row=0, column=1, sticky="ns")
+    body_canvas.configure(yscrollcommand=body_scrollbar.set)
+    body.rowconfigure(0, weight=1)
+    body.columnconfigure(0, weight=1)
+
+    main_frame = ttk.Frame(body_canvas, padding=(px(16), 0, px(16), px(16)))
+    main_window = body_canvas.create_window(0, 0, window=main_frame,
+                                            anchor="nw")
+
+    def needs_scrolling():
+        return main_frame.winfo_reqheight() > body_canvas.winfo_height()
+
+    def update_scrolling(event=None):
+        body_canvas.configure(scrollregion=(0, 0, 
+                                            main_frame.winfo_reqwidth(),
+                                            main_frame.winfo_reqheight()))
+        if needs_scrolling():
+            body_scrollbar.grid()
+        else:
+            body_scrollbar.grid_remove()
+            body_canvas.yview_moveto(0)
+
+    def on_canvas_resize(event):
+        # The sections always fill the width of the window
+        body_canvas.itemconfigure(main_window, width=event.width)
+        update_scrolling()
+
+    main_frame.bind("<Configure>", update_scrolling)
+    body_canvas.bind("<Configure>", on_canvas_resize)
+
+    def on_mouse_wheel(event):
+        if not needs_scrolling():
+            return
+        if event.num == 4:
+            step = -1
+        elif event.num == 5:
+            step = 1
+        elif sys.platform == "darwin":
+            step = -event.delta
+        else:
+            step = -event.delta // 120
+        body_canvas.yview_scroll(step, "units")
+
+    # Linux sends Button-4/5 for the mouse wheel, other systems MouseWheel
+    for sequence in ("<MouseWheel>", "<Button-4>", "<Button-5>"):
+        root.bind_all(sequence, on_mouse_wheel)
 
     # Sections: a bold heading followed by a frame for the contents
     def add_section(i, title):
@@ -947,7 +1003,9 @@ def run_gui():
     # A white bar with a thin line above it; the right edge lines up with
     # the cards
     footer = tk.Frame(root, bg=card_bg)
-    footer.pack(fill="x", side="bottom")
+    # Packed before the body, so that the body shrinks first when the
+    # window gets smaller
+    footer.pack(fill="x", side="bottom", before=body)
     tk.Frame(footer, height=1, bg=card_border).pack(fill="x")
 
     button_frame = ttk.Frame(footer, style="Card.TFrame",
@@ -968,8 +1026,16 @@ def run_gui():
 
     refresh_paths()
 
-    # Fit the window to its contents, and don't allow it to get smaller
+    # Fit the window to its contents, but not taller than the screen (with
+    # some room for the taskbar and the title bar), and center it
     root.update_idletasks()
-    root.minsize(max(px(900), root.winfo_reqwidth()), root.winfo_reqheight())
+    width = max(px(900), main_frame.winfo_reqwidth() + px(20))
+    height = (header_frame.winfo_reqheight() + main_frame.winfo_reqheight() +
+              footer.winfo_reqheight())
+    height = min(height, root.winfo_screenheight() - px(100))
+    x = max(0, (root.winfo_screenwidth() - width) // 2)
+    y = max(0, (root.winfo_screenheight() - height) // 2 - px(30))
+    root.geometry(f"{width}x{height}+{x}+{y}")
+    root.minsize(width, min(height, px(450)))
 
     root.mainloop()
