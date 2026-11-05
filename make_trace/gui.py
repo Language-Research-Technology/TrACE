@@ -519,17 +519,22 @@ def run_gui():
         style="Muted.TLabel"
     ).grid(row=1, column=0, sticky="w")
 
-    # Tell people that the names have explanations, in a light blue pill on
-    # the line of the subtitle. The header has the same side margins as the
-    # cards (main frame padding + card padding)
-    tk.Label(
-        header_frame,
-        text="ⓘ  Hover over any name to see what it's for",
-        bg="#e7f5ff",
-        fg="#1971c2",
-        padx=px(10),
-        pady=px(2)
-    ).grid(row=1, column=1, sticky="e")
+    # Tell people that the names have explanations, on the line of the
+    # subtitle: grey text like the subtitle, with only the icon in blue, so
+    # it's easy to find without competing with the Run button. The header has
+    # the same side margins as the cards (main frame padding + card padding)
+    tip_frame = ttk.Frame(header_frame)
+    tip_frame.grid(row=1, column=1, sticky="e")
+    ttk.Label(
+        tip_frame,
+        text="ⓘ",
+        foreground=accent_color
+    ).grid(row=0, column=0, padx=(0, px(6)))
+    ttk.Label(
+        tip_frame,
+        text="Hover over any name to see what it's for",
+        style="Muted.TLabel"
+    ).grid(row=0, column=1)
     header_frame.columnconfigure(1, weight=1)
 
     # Main layout
