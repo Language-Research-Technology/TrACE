@@ -412,25 +412,27 @@ def run_gui():
         darkcolor=[("active", button_hover)]
     )
 
-    # Borderless button, e.g. for removing a chosen path
-    style.configure(
-        "Ghost.TButton",
-        background=card_bg,
-        foreground=muted_color,
-        bordercolor=card_bg,
-        lightcolor=card_bg,
-        darkcolor=card_bg,
-        padding=(px(6), px(3)),
-        focusthickness=0,
-        focuscolor=card_bg
-    )
-    style.map(
-        "Ghost.TButton",
-        background=[("active", button_hover)],
-        bordercolor=[("active", button_hover)],
-        lightcolor=[("active", button_hover)],
-        darkcolor=[("active", button_hover)]
-    ) 
+    # Borderless buttons, e.g. for removing a chosen path: on cards, and
+    # on the grey background
+    for name, background in [("Ghost", card_bg), ("PlainGhost", bg_color)]:
+        style.configure(
+            f"{name}.TButton",
+            background=background,
+            foreground=muted_color,
+            bordercolor=background,
+            lightcolor=background,
+            darkcolor=background,
+            padding=(px(6), px(3)),
+            focusthickness=0,
+            focuscolor=background
+        )
+        style.map(
+            f"{name}.TButton",
+            background=[("active", button_hover)],
+            bordercolor=[("active", button_hover)],
+            lightcolor=[("active", button_hover)],
+            darkcolor=[("active", button_hover)]
+        )
 
     # Flat checkboxes: a grey outline, or blue with a white tick when checked
     style.configure(
@@ -607,9 +609,9 @@ def run_gui():
     #     [icon]  Audio folder                         12 audio files
     #             …/project/audio                   [Change…] [✕]
     #
-    # + "row" for the optional files in the page options:
+    # + "row" for the optional files, on a line below the cards:
     #
-    #     Help file   ✓ …/help.md                  [Change…] [✕]
+    #     Optional:  Help file  …/help.md  [Change…] [✕]
     #
     # + "bar" for the output folder, in the bottom bar:
     #
@@ -717,7 +719,7 @@ def run_gui():
             else:
                 # Rows and the bottom bar have no room for the info, so
                 # it goes into the tooltip, and only problems are coloured
-                max_len = 24 if kind == "row" else 32
+                max_len = 18 if kind == "row" else 32
                 if not value:
                     text = "Not chosen"
                 elif status == "ok":
@@ -777,14 +779,14 @@ def run_gui():
         return var, command, widget
 
     def add_choose_buttons(parent, var, command, widget, row, column,
-                           removable=True):
+                           removable=True, remove_style="Ghost.TButton"):
         widget["choose"] = ttk.Button(parent, width=8, style="Card.TButton",
                                       command=command)
         widget["choose"].grid(row=row, column=column, padx=(px(8), 0))
 
         if removable:
             widget["remove"] = ttk.Button(parent, text="✕", width=2,
-                                          style="Ghost.TButton",
+                                          style=remove_style,
                                           command=lambda v=var: v.set(""))
             widget["remove"].grid(row=row, column=column + 1,
                                   padx=(px(2), 0))
@@ -821,22 +823,36 @@ def run_gui():
 
         frame.columnconfigure(2, weight=1)
 
-    def add_path_row(parent, row, var_name, label_text, filetypes):
-        """A single line for an optional file: name, path and buttons"""
+    def add_path_row(parent, row, column, var_name, label_text, filetypes,
+                     prefix=None):
+        """
+        A single line for an optional file, on the background below the
+        cards: name, path and buttons, lined up with the card contents
+        """
 
         var, command, widget = add_path_var(var_name, label_text, filetypes,
                                             False, "row")
 
-        label = ttk.Label(parent, text=label_text, style="CardText.TLabel")
-        label.grid(row=row, column=0, sticky="w", padx=(0, px(12)),
-                   pady=px(4))
+        frame = ttk.Frame(parent)
+        frame.grid(row=row, column=column, sticky="ew",
+                   padx=(px(17), px(4)), pady=(px(4), 0))
+
+        if prefix:
+            ttk.Label(frame, text=prefix, style="Muted.TLabel").grid(
+                row=0, column=0, sticky="w", padx=(0, px(12))
+            )
+
+        label = ttk.Label(frame, text=label_text)
+        label.grid(row=0, column=1, sticky="w", padx=(0, px(10)))
         Tooltip(label, text=HELP_STRINGS[var_name], waittime=50)
 
-        widget["path"] = ttk.Label(parent, style="CardText.TLabel")
-        widget["path"].grid(row=row, column=1, sticky="w")
+        widget["path"] = ttk.Label(frame)
+        widget["path"].grid(row=0, column=2, sticky="w")
         widget["path_tip"] = Tooltip(widget["path"], text="", waittime=50)
 
-        add_choose_buttons(parent, var, command, widget, row=row, column=2)
+        add_choose_buttons(frame, var, command, widget, row=0, column=3,
+                           remove_style="PlainGhost.TButton")
+        frame.columnconfigure(2, weight=1)
 
     for i, spec in enumerate([
         ("audio_dir", "Audio folder", None, True),
@@ -846,53 +862,58 @@ def run_gui():
     ]):
         add_path_card(paths_frame, i // 2, i % 2, *spec)
 
+    # Optional files, on one line below the cards
+    add_path_row(paths_frame, 2, 0, "help_file", "Help file", md_types,
+                 prefix="Optional:")
+    add_path_row(paths_frame, 2, 1, "licence_file", "Licence file", md_types)
+    add_path_row(paths_frame, 3, 0, "logos_file", "Logos CSV file",
+                 csv_types)
+
     paths_frame.columnconfigure((0, 1), weight=1, uniform="cards")
 
     # ------------------------------------------------------------------
     # PAGE OPTIONS
     # ------------------------------------------------------------------
 
-    # One card: text fields on the left; colors and optional files on the
-    # right
+    # One card with a 2x2 grid of fields:
+    #
+    #   Browser tab title [      ]    Page header [      ]
+    #   Notes tier in ELAN [     ]    Colors      [■] [■] [■] Reset
+    #
+    # Columns: label, field, gap, label, field
     options_card = make_card(options_frame, padding=14)
     options_card.grid(row=0, column=0, sticky="ew", padx=px(4), pady=px(4))
     options_frame.columnconfigure(0, weight=1)
+    options_card.columnconfigure((1, 4), weight=1, uniform="fields")
+    options_card.columnconfigure(2, minsize=px(28))
 
-    titles_frame = ttk.Frame(options_card, style="Card.TFrame")
-    titles_frame.grid(row=0, column=0, sticky="nsew")
-    titles_frame.columnconfigure(1, weight=1)
-    options_card.columnconfigure(0, weight=1)
+    def option_label(text, row, column, help_text):
+        label = ttk.Label(options_card, text=text, style="CardText.TLabel")
+        label.grid(row=row, column=column, sticky="w", padx=(0, px(12)),
+                   pady=px(4))
+        Tooltip(label, text=help_text, waittime=50)
 
-    text_vars = ["title", "header", "ann_note_tier"]
-    text_labels = ["Browser tab title", "Page header", "Notes tier in ELAN"]
+    # (var name, label, row, column)
+    text_fields = [
+        ("title", "Browser tab title", 0, 0),
+        ("header", "Page header", 0, 3),
+        ("ann_note_tier", "Notes tier in ELAN", 1, 0),
+    ]
 
-    for i, var_name in enumerate(text_vars):
-        label = ttk.Label(titles_frame, text=text_labels[i],
-                          style="CardText.TLabel")
-        label.grid(
-            row=i, column=0, sticky="w", padx=(0, px(12)), pady=px(4)
-        )
-        Tooltip(label, text=HELP_STRINGS[var_name], waittime=50)
+    for var_name, label_text, row, column in text_fields:
+        option_label(label_text, row, column, HELP_STRINGS[var_name])
 
         var = tk.StringVar(value=DEFAULTS[var_name])
         gui_vars[var_name] = var
 
         entry = ttk.Entry(
-            titles_frame,
+            options_card,
             textvariable=var,
-            width=30
+            width=20
         )
-        entry.grid(row=i, column=1, sticky="ew", pady=px(4))
+        entry.grid(row=row, column=column + 1, sticky="ew", pady=px(4))
         # Unfocus on Enter key
         entry.bind("<Return>", unfocus_entry)
-
-    # VERTICAL LINE
-    vertical_line = ttk.Separator(options_card, orient=tk.VERTICAL)
-    vertical_line.grid(row=0, column=1, sticky="ns", padx=px(20))
-
-    extras_frame = ttk.Frame(options_card, style="Card.TFrame")
-    extras_frame.grid(row=0, column=2, sticky="nsew")
-    extras_frame.columnconfigure(1, weight=1)
 
     # COLORS: one row of clickable swatches
 
@@ -910,11 +931,12 @@ def run_gui():
         for k in colour_vars:
             gui_vars[k].set(DEFAULTS[k])
 
-    label = ttk.Label(extras_frame, text="Colors", style="CardText.TLabel")
-    label.grid(row=0, column=0, sticky="w", padx=(0, px(12)), pady=px(4))
+    option_label("Colors", 1, 3,
+                 "Colors of the TrACE page. Hover over a color for details, "
+                 "and click it to change it.")
 
-    swatches_frame = tk.Frame(extras_frame, bg=card_bg)
-    swatches_frame.grid(row=0, column=1, columnspan=3, sticky="w")
+    swatches_frame = tk.Frame(options_card, bg=card_bg)
+    swatches_frame.grid(row=1, column=4, sticky="w")
 
     for i, var_name in enumerate(colour_vars):
         colour_var = tk.StringVar(value=DEFAULTS[var_name])
@@ -950,12 +972,6 @@ def run_gui():
         style="Ghost.TButton",
         command=reset_colors,
     ).grid(row=0, column=3, padx=(px(4), 0))
-
-    # OPTIONAL FILES
-
-    add_path_row(extras_frame, 1, "help_file", "Help file", md_types)
-    add_path_row(extras_frame, 2, "licence_file", "Licence file", md_types)
-    add_path_row(extras_frame, 3, "logos_file", "Logos CSV file", csv_types)
 
     # ------------------------------------------------------------------
     # Bottom bar: output folder, output options and the Run button
