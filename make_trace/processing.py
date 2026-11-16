@@ -190,6 +190,7 @@ def create_transcripts_file(input_csv, output_js, elan_dir):
         f.write(';')
 
     logger.info(f"Transcripts data saved to: {output_js}")
+    
 
 def insert_template_option(option, option_value, template_str):
     """
@@ -200,9 +201,8 @@ def insert_template_option(option, option_value, template_str):
             that (1) each option sits on its own line in HTML; (2) the 
             pattern contains one capture group, which captures the option,
              e.g., "^(.*const pageTitle = ).*$"
-        option_value: option value to be inserted. It is is inserted verbatim: 
-            a callable is used instead of a replacement string so that 
-            backslashes in it are not interpreted by re.sub.
+        option_value: option value to be inserted. It is inserted verbatim: 
+            backslashes are not interpreted by re.sub.
         template_str: Full HTML template
 
     Returns:
