@@ -1241,7 +1241,7 @@
 
                 const btn = document.createElement('button');
                 btn.classList.add('annotation-btn');
-                btn.innerHTML = `<strong>${tierId}:</strong> ${ann.content}`;
+                btn.innerHTML = `<strong>${escapeHtml(tierId)}:</strong> ${escapeHtml(ann.content)}`;
                 btn.dataset.start = ann.start;
                 btn.dataset.end = ann.end;
                 btn.dataset.index = index;
@@ -1288,6 +1288,24 @@
             .replace(/-+/g, '-')          // Collapse consecutive hyphens
             .replace(/^-+|-+$/g, '');     // Remove leading/trailing hyphens
     };
+
+    /**
+     * Escape text for safe insertion into HTML
+     *
+     * Annotation and speaker data are plain text, so characters like < and >
+     * must be shown literally rather than interpreted as HTML tags.
+     *
+     * @param {String} text - plain text
+     * @returns {String} text with HTML special characters escaped
+     */
+    function escapeHtml(text) {
+        return String(text)
+            .replaceAll("&", "&amp;")
+            .replaceAll("<", "&lt;")
+            .replaceAll(">", "&gt;")
+            .replaceAll('"', "&quot;")
+            .replaceAll("'", "&#39;");
+    }
 
     /**
      * Find transcript by the recording's name 
@@ -1448,12 +1466,23 @@
             file.annotations.forEach(ann => {
                 const contentLower = ann.content.toLowerCase();
                 if (contentLower.includes(query)) {
+                    // Exactly one capture group, so split() alternates
+                    // [text, match, text, ..., text]: matches at odd indices.
                     const regex = new RegExp(`(${RegExp.escape(query)})`, 'gi');
-                    const highlighted = ann.content.replace(regex, '<span class="highlight">$1</span>');
+
+                    // For matches, escape HTML symbols and add higlight; for
+                    // other text in the annotation, just escape HTML symbols.
+                    // The i%2 checks whehter we deal with an odd or even 
+                    // split index -- see the previous comment
+                    const highlighted = ann.content.split(regex)
+                        .map((part, i) => i % 2
+                            ? `<span class="highlight">${escapeHtml(part)}</span>`
+                            : escapeHtml(part))
+                        .join('');
 
                     const snippetBtn = document.createElement('button');
                     snippetBtn.classList.add("query-match-btn");
-                    snippetBtn.innerHTML = `<strong>${ann.TIER_ID}:</strong> ${highlighted}`;
+                    snippetBtn.innerHTML = `<strong>${escapeHtml(ann.TIER_ID)}:</strong> ${highlighted}`;
 
                     snippetBtn.onclick = () => {
                         store.setCurrentRecording(file.displayName);
@@ -1530,7 +1559,7 @@
         matchedSpeakers.forEach(match => {           
             const card = document.createElement('div');
             card.className = 'speaker-card';
-            card.innerHTML = `<h3>${match.Name}</h3>`;
+            card.innerHTML = `<h3>${escapeHtml(match.Name)}</h3>`;
             for (const [key, value] of Object.entries(match)) {
                 // Skip names -- we already use them as title
                 if (key == "Name") {
@@ -1538,7 +1567,7 @@
                 }
                 // For values, we treat ";" as separator, which for presentation
                 // purposes is replaced with ", "
-                card.innerHTML = card.innerHTML + `<p><span class="label">${key}:</span> ${value.replaceAll(";", ", ")}</p>`
+                card.innerHTML = card.innerHTML + `<p><span class="label">${escapeHtml(key)}:</span> ${escapeHtml(value.replaceAll(";", ", "))}</p>`
             }
             speakerCardsDiv.appendChild(card);
         });
