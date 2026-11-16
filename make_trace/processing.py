@@ -191,6 +191,67 @@ def create_transcripts_file(input_csv, output_js, elan_dir):
 
     logger.info(f"Transcripts data saved to: {output_js}")
 
+def insert_template_option(option, option_value, template_str):
+    """
+    Insert a value for an option inside HTML template.
+
+    Args:
+        option: pattern to identify the option in HTML template. It is assumed 
+            that (1) each option sits on its own line in HTML; (2) the 
+            pattern contains one capture group, which captures the option,
+             e.g., "^(.*const pageTitle = ).*$"
+        option_value: option value to be inserted. It is is inserted verbatim: 
+            a callable is used instead of a replacement string so that 
+            backslashes in it are not interpreted by re.sub.
+        template_str: Full HTML template
+
+    Returns:
+        Modified HTML template with the new option value
+    """
+    return re.sub(option, lambda m: m.group(1) + option_value, template_str,
+                  flags=re.MULTILINE)
+
+
+def insert_template_md(md_file, placeholder, template_str):
+    """
+    Read a markdown file, convert to HTML, and insert into the TrACE HTML 
+    template. 
+
+    This is used to insert help and licence texts.
+
+    Args:
+        md_file: path to the file with Markdown text; assumed to be in UTF-8
+        placeholder: pattern to identify the placeholder in HTML template. It is 
+            assumed that (1) each placeholder sits on its own line in HTML; 
+            (2) the pattern contains one capture group, which captures 
+            the placeholder, e.g., "^(.*helpHTML = `)`.*$"
+        template_str: Full HTML template
+
+    Returns:
+        Modified HTML template with the new option value
+    """
+    if md_file is not None and Path(md_file).is_file():
+
+        with open(Path(md_file), encoding='utf-8') as f:
+            md_text = f.read()
+
+        # Convert Markdown to HTML and escape symbols which might break the 
+        # HTML template
+        html_text = (Markdown().convert(md_text)
+                     .replace("\\", "\\\\")
+                     .replace("`", "\\`")
+                     .replace("${", "\\${")
+                     .replace("</", "<\\/"))
+
+        out = insert_template_option(placeholder, f'`{html_text}`;', 
+                                     template_str)
+        
+        return(out)
+    
+    else:
+        # If Markdown file does not exist, return input template without changes
+        return(template_str)
+
 
 def render_template(template_str, 
                     output_file,
@@ -228,66 +289,40 @@ def render_template(template_str,
     out = template_str
 
     # Page title 
-    out = re.sub('^(.*const pageTitle = ).*$', 
-                 f'\\1"{title}"',
-                 out,
-                 flags=re.MULTILINE)
+    out = insert_template_option('^(.*const pageTitle = ).*$', 
+                                 f'{json.dumps(title, ensure_ascii=False)};', 
+                                 out) 
 
     # Interface header 
-    out = re.sub('^(.*const pageHeader = ).*$', 
-                 f'\\1"{header}"',
-                 out,
-                 flags=re.MULTILINE)
+    out = insert_template_option('^(.*const pageHeader = ).*$', 
+                                 f'{json.dumps(header, ensure_ascii=False)};', 
+                                 out)
 
     # Note tier
-    out = re.sub('^(.*const annNoteTier = ).*$', 
-                 f'\\1"{ann_note_tier}"',
-                 out,
-                 flags=re.MULTILINE)
+    out = insert_template_option('^(.*const annNoteTier = ).*$', 
+                                 f'{json.dumps(ann_note_tier, ensure_ascii=False)};',
+                                 out)
 
     # Main interface color
-    out = re.sub('^(.*--primary-color: ).*$', 
-                 f'\\1{primary_color};',
-                 out,
-                 flags=re.MULTILINE)
+    out = insert_template_option('^(.*--primary-color: ).*$', 
+                                 f'{primary_color};', 
+                                 out)
 
     # Annotation highlight color 
-    out = re.sub('^(.*--ann-highlight-color: ).*$', 
-                 f'\\1{ann_highlight_color};',
-                 out,
-                 flags=re.MULTILINE)
+    out = insert_template_option('^(.*--ann-highlight-color: ).*$', 
+                                 f'{ann_highlight_color};',
+                                 out)
 
     # Filter match color
-    out = re.sub('^(.*--filter-match-color: ).*$', 
-                 f'\\1{filter_match_color};',
-                 out,
-                 flags=re.MULTILINE)
+    out = insert_template_option('^(.*--filter-match-color: ).*$', 
+                                 f'{filter_match_color};',
+                                 out)
 
     # Help markdown text
-    if help_file is not None and Path(help_file).is_file():
-
-        with open(Path(help_file)) as f:
-            help_text = f.read()
-
-        md = Markdown()
-
-        out = re.sub('^(.*helpHTML = `)`.*$', 
-                    f'\\1{md.convert(help_text)}`;',
-                    out,
-                    flags=re.MULTILINE)
+    out = insert_template_md(help_file, '^(.*helpHTML = ).*$', out)
 
     # Licence markdown text
-    if licence_file is not None and Path(licence_file).is_file():
-
-        with open(Path(licence_file)) as f:
-            licence_text = f.read()
-
-        md = Markdown()
-
-        out = re.sub('^(.*licenceHTML = `)`.*$', 
-                    f'\\1{md.convert(licence_text)}`;',
-                    out,
-                    flags=re.MULTILINE)
+    out = insert_template_md(licence_file, '^(.*licenceHTML = ).*$', out)
 
     with open(Path(output_file), "w", newline="", encoding="utf-8") as f:
         f.write(out)
