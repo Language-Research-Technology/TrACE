@@ -1,4 +1,5 @@
 import argparse
+import logging
 import textwrap
 from pathlib import Path
 
@@ -165,6 +166,14 @@ template_group.add_argument("--licence_file",
                             type=Path,
                             metavar="",
                             help=(HELP_STRINGS["licence_file"] + 
+                                "\n  Default: None\n")
+                            )
+
+template_group.add_argument("--logos_file",
+                            dest="logos_file",
+                            type=Path,
+                            metavar="",
+                            help=(HELP_STRINGS["logos_file"] + 
                                 "\n  Default: None\n")
                             )
 

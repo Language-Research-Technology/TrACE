@@ -17,7 +17,7 @@ def run_gui():
 
         paths = ["audio_dir", "elan_dir", "output_dir", 
                  "speakers_info_file", "recordings_info_file",
-                 "help_file", "licence_file"]
+                 "help_file", "licence_file", "logos_file"]
         for v in paths:
             if input_vars[v].strip() == "":
                 input_vars[v] = None
@@ -232,8 +232,8 @@ def run_gui():
     gui_vars = {}
 
     root.title("TrACE preparation")
-    root.geometry("950x600")
-    root.minsize(950,600)
+    root.geometry("950x640")
+    root.minsize(950,640)
 
     default_font = tkFont.nametofont("TkDefaultFont")
     default_font.configure(size=10)
@@ -331,11 +331,12 @@ def run_gui():
     
     path_vars = ["audio_dir", "elan_dir", "speakers_info_file",
                  "recordings_info_file", 
-                 "help_file", "licence_file",
+                 "help_file", "licence_file", "logos_file",
                  "output_dir"]
     path_labels = ["Audio folder", "Elan folder", 
                    "Speakers CSV file", "Recordings CSV file",
                    "Help file (optional)", "Licence file (optional)",
+                   "Logos CSV file (optional)",
                    "Output folder"]
     path_tooltips = [
         HELP_STRINGS["audio_dir"],
@@ -344,6 +345,7 @@ def run_gui():
         HELP_STRINGS["recordings_info_file"],
         HELP_STRINGS["help_file"],
         HELP_STRINGS["licence_file"],
+        HELP_STRINGS["logos_file"],
         HELP_STRINGS["output_dir"]
         ]
 

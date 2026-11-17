@@ -60,6 +60,28 @@ following fields:
 
 See an example file in the examples folder.
 
+## Header logos
+
+Logos of your project, partners or funders can be shown under the page header.
+When preparing TrACE with `make_trace`, you can list them in a CSV file
+(`--logos_file` in the command line, or "Logos CSV file" in the graphical 
+interface). Each row corresponds to one logo, shown from left to right:
+
+```csv
+image,text,url,title
+logos/anu.png,,https://www.anu.edu.au/,Australian National University
+,My Project,https://example.org/,
+```
+
++ *image* -- path to the image file, relative to the CSV file. Supported 
+    formats: PNG, JPEG, GIF, SVG, WebP.
++ *text* -- text to show instead of an image, for logos without an image
++ *url* -- page to open when the logo is clicked (optional)
++ *title* -- text shown when hovering the mouse over the logo (optional)
+
+Each logo needs either an *image* or a *text*. Image files are embedded into
+the HTML file, so they don't need to be copied together with it.
+
 ## Credits
 
 TrACE was created by Wolfgang Barth and Anton Malko, as part of

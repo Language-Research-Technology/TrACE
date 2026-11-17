@@ -37,6 +37,15 @@ HELP_STRINGS = {
         "Path to file with help text; will be interpreted as Markdown",
     "licence_file":
         "Path to file with licence text; will be interpreted as Markdown",
+    "logos_file":
+        ("Path to CSV file with logos to show in the page header. Each row " +
+         "corresponds to a logo, shown from left to right. Columns: " +
+         "'image' -- path to the image file (relative to the CSV file); " +
+         "'text' -- text to show instead of an image; " +
+         "'url' -- page to open when the logo is clicked; " +
+         "'title' -- text shown on mouse hover. " +
+         "Each logo needs an image or a text; other " +
+         "columns are optional."),
 }
 
 DEFAULTS = {

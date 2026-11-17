@@ -27,6 +27,10 @@
         // used to jump to their initial timestamp) or not.
         const clickableAnnotationNotes = false;
 
+        // Logos shown in the header; filled in by make_trace.pyz from the logos 
+        // CSV file
+        const headerLogos = [];
+
         const licenceHTML = ``
         const helpHTML = ``;
     </script>
@@ -169,13 +173,14 @@
         }
 
         .logo-card {
-            width: 100px; /* Give every logo container the same slot width */
-            height: 30px; /* Same for height */
+            height: 30px; /* All logos have the same height... */
         }
 
         .logo-card img {
-            width: 100%;
+            display: block;
             height: 100%;
+            width: auto; /* ...and keep their own proportions... */
+            max-width: 150px; /* ...but very wide logos are scaled down */
             object-fit: contain; /* Sizes logo to fit the box without stretching */
         }
 
@@ -184,7 +189,8 @@
             border-radius: 0.5em;
         }
 
-        .logo-text a {
+        .logo-text a,
+        .logo-text span {
             text-decoration: none; /* No underline */
             color: dimgray;
             font-weight: bold;
@@ -769,21 +775,8 @@
 
 <div id="header">
     <h2 id="topHeader"></h2>
-	<!-- You can put logos here -->
-    <div class="logo-grid">
-        <!-- Example code for image based logos: -->
-        <!-- <div class="logo-card">
-            <a href="PUT_URL_OF_A_PAGE_HERE" target="_blank">
-                <img src="PATH_TO_IMAGE" alt="ANU logo">
-            </a>
-        </div> -->
-        <!-- Example code for text based logos: -->
-        <!-- <div class="logo-text">
-            <a href="PUT_URL_OF_A_PAGE_HERE" target="_blank">
-                LOGO TEXT TO DISPLAY
-            </a>
-        </div> -->
-    </div>
+    <!-- Logos are added from `headerLogos` (see TEMPLATE VARIABLES) -->
+    <div id="logoGrid" class="logo-grid"></div>
 
     <!-- "Made with TrACE" badge, credits TrACE and LDaCA -->
     <a id="traceBadge" class="trace-badge" href="https://github.com/Language-Research-Technology/TrACE"
@@ -1634,6 +1627,44 @@
     }
 
     // ==========================================
+    // Header logos
+    // ==========================================
+
+    // Build logo elements from the `headerLogos` template variable. Logos are
+    // checked by make_trace.pyz: each one has an image or a text, and links 
+    // only point to web pages or email addresses.
+    function renderHeaderLogos(logos, container) {
+        for (const logo of logos) {
+            const card = document.createElement('div');
+            let content;
+
+            if (logo.image) {
+                card.className = 'logo-card';
+                content = document.createElement('img');
+                content.src = logo.image;
+                content.alt = logo.title || 'Logo';
+            } else {
+                card.className = 'logo-text';
+                content = document.createElement('span');
+                content.textContent = logo.text;
+            }
+
+            if (logo.url) {
+                const link = document.createElement('a');
+                link.href = logo.url;
+                link.target = '_blank';
+                link.rel = 'noopener';
+                link.appendChild(content);
+                content = link;
+            }
+
+            if (logo.title) card.title = logo.title;
+            card.appendChild(content);
+            container.appendChild(card);
+        }
+    }
+
+    // ==========================================
     // Initialization
     // ==========================================
 
@@ -1641,6 +1672,7 @@
     document.title = pageTitle;
     const topHeader = document.getElementById('topHeader');
     topHeader.innerHTML = pageHeader;
+    renderHeaderLogos(headerLogos, document.getElementById('logoGrid'));
 
     // Create an overall object to keep track of the currently active recording
     const store = new appState();
