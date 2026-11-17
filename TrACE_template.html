@@ -1211,6 +1211,7 @@
             
             this.#state = {
                 activeRecordingName: null,
+                activeRecordingSpeakers: null,
                 prevRecordingButton: null,
                 activeRecordingButton: null,
                 currentTranscript: null,
@@ -1228,6 +1229,7 @@
             const currentButton = findRecordingButton(recordingName);
 
             this.#state.activeRecordingName = recordingName;
+            this.#state.activeRecordingSpeakers = currentTranscript.speakers;
             // Remember which button was just active to deactivate it
             this.#state.prevRecordingButton = this.#state.activeRecordingButton
             // Record the new active button
@@ -1408,7 +1410,7 @@
 
                 return allQueriesMatch &&
                     sp.Name.toLowerCase().includes(nameQuery) &&
-                    file.displayName.toLowerCase().includes(sp.Name.toLowerCase());
+                    file.speakers.some(fileSpeaker => fileSpeaker.toLowerCase() == sp.Name.toLowerCase());
             });
 
             //If no filter terms are entered, remove filter-related styles
@@ -1573,8 +1575,7 @@
         
         // --- SPEAKER CARDS ---
         const matchedSpeakers = speakers.filter(s => {
-            const fullName = s.Name.toLowerCase();
-            return state.activeRecordingName.toLowerCase().includes(fullName);
+            return state.activeRecordingSpeakers.includes(s.Name);
         });
 
         matchedSpeakers.forEach(match => {           

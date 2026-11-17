@@ -50,6 +50,7 @@ following fields:
 
 + *filename* -- path to the audio file
 + *displayName* -- display name for the audio in the list of recordings
++ *speakers* -- a list of speakers present in the recording. Names of the spakers should match the names in the `speakers.js` file.
 + *annotations* -- a list of dictionaries, where each entry corresponds to a
     single annotation and contains the following fields:
     + *ANNOTATION_ID*
