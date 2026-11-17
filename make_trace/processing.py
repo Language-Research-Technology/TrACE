@@ -617,7 +617,7 @@ def do_processing(audio_dir, elan_dir, output_dir,
     output_dir = Path(output_dir).joinpath(final_dir)
 
     # Create output dir if not exists
-    if not output_dir.exists:
+    if not output_dir.exists():
         output_dir.mkdir(parents=True, exist_ok=True)
         logger.info(f"Created output directory: {output_dir}")
 
@@ -625,7 +625,7 @@ def do_processing(audio_dir, elan_dir, output_dir,
         logger.info("Started copying audio files")
         audio_target_dir = output_dir.joinpath("audio")
 
-        if not audio_target_dir.exists:
+        if not audio_target_dir.exists():
             audio_target_dir.mkdir(exist_ok=True)
             logger.info(f"Created output audio directory: {audio_target_dir}")
 
