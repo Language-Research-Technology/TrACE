@@ -38,7 +38,7 @@
     <style>
         /* COLOR THEME  */
         :root {
-            --primary-color: green;
+            --primary-color: #228be6;
 
             /* Color for coloured buttons -- NOTE annotations, and buttons 
             related to help popup dialogs. A mix with the primary color and 
@@ -70,6 +70,19 @@
             --ann-highlight-color: #faffa1; 
             /* Recordings matching the current set of filters */
             --filter-match-color: #c2fad2;
+
+            /* "Clear" actions: hover colour of the clear crosses, and the
+            "Clear all" pill (text, outline, fill, fill on hover). */
+            --clear-color: #c1121f;
+            --clear-border-color: #e58a94;
+            --clear-background-color: #fdeef0;
+            --clear-hover-background-color: #fbd9de;
+
+            /* --- Sizes --- */
+
+            /* Height shared by the controls in the filters row (name filter
+            field and filter buttons) */
+            --filter-control-height: 30px;
         }
     </style>
 
@@ -437,68 +450,160 @@
             position: relative;
         }
 
-        #filtersBoxHeader {
-            display: flex;
-            justify-content: space-between;
-            background-color: var(--primary-color); 
-            padding: 8px; 
-            user-select: none; 
-            border-top-left-radius: 4px;  
-            border-top-right-radius: 4px; 
-            color: white;
-            font-weight: bold; 
-            font-size: medium;
+        /* Transcript search sits at the top of the box, on the dark background */
+        #searchBoxContainer {
+            background-color: var(--primary-color);
+            border-top-left-radius: 4px;
+            border-top-right-radius: 4px;
+            gap: 4px;
+            padding: 10px 10px 4px;
         }
 
+        /* One-line summary of what the search covers / found; only filled
+        in when a search or a filter is active. Its line is always reserved
+        (even when empty), so the layout doesn't jump when text appears */
+        #searchStatus {
+            color: white;
+            opacity: 0.85;
+            font-size: small;
+            line-height: 1.4em;
+            height: 1.4em;
+            padding: 0 2px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        /* Magnifying glass inside the search field */
+        .search-icon {
+            position: absolute;
+            left: 12px;
+            width: 18px;
+            height: 18px;
+            fill: none;
+            stroke: var(--placeholder-color);
+            stroke-width: 2.5;
+            stroke-linecap: round;
+            pointer-events: none;
+        }
+
+        /* Filters sit below the search, on the light background. Horizontal
+        padding matches #searchBoxContainer, so the search field, the funnel
+        icon and the filter controls share the same left edge */
         #filtersBoxBody {
-            background-color: var(--primary-color); 
-            color: #333;  
+            color: #333;
+            padding: 8px 10px 10px;
+            gap: 8px;
+        }
+
+        /* Compact header for the filters: small funnel icon + muted label,
+        no divider, so it labels the section without competing with search.
+        "Clear all" sits at its right end */
+        #filtersBoxHeader {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            min-height: 20px;
+            user-select: none;
+            color: var(--placeholder-color);
+            font-size: small;
+            font-weight: 600;
+            letter-spacing: 0.02em;
+        }
+
+        .filter-icon {
+            width: 14px;
+            height: 14px;
+            fill: currentColor;
+            flex-shrink: 0;
         }
 
         .filter-buttons-row {
             display: flex;
-            flex-wrap: wrap; 
-            /* 0px vertical gap helps to avoid increased vertical space when 
-            buttons wrap onto the next line */
-            gap: 0px 12px; 
+            flex-wrap: wrap;
+            gap: 6px 8px;
             width: 100%;
         }
 
-        /* --- Global "Clear all" button --- */ 
-        /* Most of the styling for this comes from .tag-picker-btn */
+        /* --- Global "Clear all" button --- */
+        /* Small red pill with a cross, at the right end of the filters header */
         #clearAllBtn {
-            color: #ef4444; 
+            margin-left: auto;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 1px 8px;
+            border: 1px solid var(--clear-border-color);
+            border-radius: 999px;
+            background: var(--clear-background-color);
+            font: inherit;
+            line-height: 18px;
+            color: var(--clear-color);
+            cursor: pointer;
+            transition: background-color 0.2s;
         }
 
         #clearAllBtn:hover {
-            color: #dc2626;
-            background-color: #ffeded;
-            filter: brightness(1); /* Undo parent style*/
+            background: var(--clear-hover-background-color);
+            border-color: var(--clear-color);
         }
 
-        /* -- Settings for recording name filter -- */
+        /* Hidden, but still taking up its space (so nothing reflows when the
+        button appears) */
+        #clearAllBtn.is-hidden {
+            visibility: hidden;
+        }
 
-        /* Container for the speaker name input field*/
+        /* -- Settings for name filter -- */
+        /* Compact field that looks like one more filter chip */
+
+        /* Container for the name input field*/
         #nameInput {
-            max-width: 350px;
+            flex: 0 1 160px;
+            min-width: 110px;
         }
 
-        /* Speaker name input field itself */
+        /* Name input field itself -- same height, border, radius and font as
+        .tag-picker-btn */
         #speakerFilterBox {
-            flex: 1; /* stays on the right */
+            flex: 1;
+            height: var(--filter-control-height);
+            min-height: 0;
+            padding: 0 24px 0 10px;
+            border: 1px solid var(--primary-color);
+            border-radius: 6px;
+            font-size: small;
+        }
+
+        #nameInput .clear-text-btn {
+            right: 8px;
+            font-size: 16px;
         }
 
         /* -- Settings for transcript search field -- */
 
         /* Container for the transcript search field*/
         #transcript-search-input {
-            width: 80%;
+            width: 100%;
         }
 
-        /* Transcript search field itself */
+        /* Transcript search field itself -- larger input, with room
+        on the left for the magnifying glass and on the right for the clear
+        button */
         #searchBox {
-            flex: 1; /* stays on the left */
-            margin: 6px 0px;
+            flex: 1;
+            margin: 0;
+            min-height: 38px;
+            padding: 8px 36px 8px 40px;
+            font-size: 14px;
+            border-radius: 6px;
+            border: 1px solid transparent;
+        }
+
+        #searchBox:focus {
+            border-color: transparent;
+            /* Thin focus ring (set to "none" to remove it) */
+            box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.5);
         }   
 
         /* --- CLEARABLE INPUT FIELD --- */
@@ -548,7 +653,7 @@
         }
 
         .clear-text-btn:hover {
-            color: #ef4444; /* Turns red on hover */
+            color: var(--clear-color); /* Turns red on hover */
         }
 
         /* --- TAG PICKER CONTROL --- */
@@ -564,6 +669,7 @@
 
         .tag-picker-btn {
             position: relative;
+            height: var(--filter-control-height);
             font-size: small;
             font-weight: 600;
             color: var(--placeholder-color);
@@ -661,7 +767,7 @@
         }
 
         .tag-picker-inner-clear:hover {
-            color: #ef4444;
+            color: var(--clear-color);
         }
 
         /* --- POPUP DIALOGS --- */
@@ -797,28 +903,37 @@
         </div> -->
         <div class="scrollBox" id="searchArea">
             <div id="filtersBox">
-                <div id="filtersBoxHeader">
-                    Filter recordings
-                </div>
-                <div id="filtersBoxBody" class="search-container">
-                    <div class="text-input-container" id="nameInput">
-                        <!-- <label class="label">Name:</label> -->
-                        <input type="text" class="custom-text-input" placeholder=""
-                            id="speakerFilterBox">
-                        <div class="clear-text-btn" id="clearNameFilterBtn" title="Clear text">&times;</div>
-                    </div> 
-                    <div class="filter-buttons-row">
-                        <div id="clearAllBtnContainer" class="tag-picker-btn-container">
-                        <button id="clearAllBtn" class="tag-picker-btn">
-                            Clear all
-                        </button>
-                    </div>
-                    </div>
-                </div>
-                <div class="search-container">
+                <div class="search-container" id="searchBoxContainer">
                     <div class="text-input-container" id="transcript-search-input">
-                        <input type="text" class="custom-text-input" placeholder="" id="searchBox">
+                        <svg class="search-icon" viewBox="0 0 24 24" aria-hidden="true">
+                            <circle cx="11" cy="11" r="7"></circle>
+                            <line x1="16.5" y1="16.5" x2="21" y2="21"></line>
+                        </svg>
+                        <input type="text" class="custom-text-input" placeholder="" id="searchBox"
+                            aria-label="Search transcripts">
                         <div class="clear-text-btn" id="clearSearchBtn" title="Clear text">&times;</div>
+                    </div>
+                    <div id="searchStatus" aria-live="polite"></div>
+                </div>
+                <div id="filtersBoxBody" class="search-container" role="group"
+                    aria-labelledby="filtersBoxHeader">
+                    <div id="filtersBoxHeader">
+                        <svg class="filter-icon" viewBox="0 0 24 24" aria-hidden="true">
+                            <path d="M3 5h18l-7 8.5V19l-4 2v-7.5z"></path>
+                        </svg>
+                        <span>Filter recordings</span>
+                        <!-- Only visible while at least one filter is active -->
+                        <button type="button" id="clearAllBtn" class="is-hidden"><span aria-hidden="true">&#10005;</span> Clear all</button>
+                    </div>
+                    <!-- Name filter and tag pickers share one row of
+                    uniformly styled controls; tag pickers are appended here
+                    by the script -->
+                    <div class="filter-buttons-row" id="filterButtonsRow">
+                        <div class="text-input-container" id="nameInput">
+                            <input type="text" class="custom-text-input" placeholder=""
+                                id="speakerFilterBox" aria-label="Filter by recording name">
+                            <div class="clear-text-btn" id="clearNameFilterBtn" title="Clear text">&times;</div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -875,13 +990,16 @@
             });
 
             this.clearBtn.addEventListener('click', () => {
-                this.input.value = '';
-                this.clearBtn.style.display = 'none';
+                this.clear();
                 this.input.focus();
-
-                // 3. Trigger callback when the clear button resets the field
-                this.triggerCallback();
             });
+        }
+
+        // Empty the field, hide the clear button and trigger the callback
+        clear() {
+            this.input.value = '';
+            this.clearBtn.style.display = 'none';
+            this.triggerCallback();
         }
 
         getValue() {
@@ -1356,6 +1474,38 @@
     }
 
     /**
+     * Updates the status line under the search field. It is empty at rest
+     * (its line is still reserved, see #searchStatus CSS), and only reports
+     * something when a search and/or a filter is active:
+     *   filters only:    "Searching 12 of 48 recordings"
+     *   search only:     "37 matches in 9 recordings"
+     *   search+filters:  "Searching 12 of 48 recordings · 37 matches in 9 recordings"
+     * @param {Number} [matches] - number of matching annotations
+     * @param {Number} [recordings] - number of recordings with matches
+     */
+    function updateSearchStatus(matches, recordings) {
+        const total_n_transcripts = transcripts.length;
+        const n_filtered_transcripts = filteredData.length;
+
+        // Small helper to pluralize words to agree with counts
+        const plural = (n, word, pluralWord = word + 's') =>
+            `${n} ${n === 1 ? word : pluralWord}`;
+
+        // Scope part: shown whenever filters restrict the searched recordings
+        const scope = filtersActive
+            ? `Searching ${n_filtered_transcripts} of ${plural(total_n_transcripts, 'recording')}`
+            : '';
+
+        // Results part: shown whenever there is a search query
+        const found = matches === undefined
+            ? ''
+            : `${plural(matches, 'match', 'matches')} in ` +
+              plural(recordings, 'recording');
+
+        searchStatus.textContent = [scope, found].filter(Boolean).join(' · ');
+    }
+
+    /**
      * Filters file list depending on the values in filter inputs
      */
     function filterFileList() {
@@ -1378,9 +1528,11 @@
 
         const nameQuery = speakerFilterBox.getValue().toLowerCase();
 
-        let numberMatchingRecordings = 0;
+        filtersActive = Object.values(filtersSelected).some(val => val.length > 0) ||
+            nameQuery.length > 0;
 
-        filteredData = [];
+        // With no active filters, all recordings are searched
+        filteredData = filtersActive ? [] : transcripts;
 
         // Remember buttons initial positions (to animate movements for the
         // search matches)
@@ -1414,12 +1566,9 @@
             });
 
             //If no filter terms are entered, remove filter-related styles
-            if (Object.values(filtersSelected).every(val => val.length === 0) && 
-                nameQuery.length === 0) {
-                    btn.classList.remove('search-match');
-                    btn.disabled = false;
-                    filteredData = transcripts;
-                    numberMatchingRecordings = -1;
+            if (!filtersActive) {
+                btn.classList.remove('search-match');
+                btn.disabled = false;
             } else { // If the user specified filter terms...
                 if (matchedSpeakers.length === 0) { // Style and disable unmatched recordings
                     btn.classList.remove('search-match');
@@ -1428,18 +1577,13 @@
                     btn.classList.add('search-match');
                     btn.disabled = false;
                     filteredData.push(file);
-                    numberMatchingRecordings = numberMatchingRecordings + 1;
                 }
             }
         });
 
-        // Update the filterBox header with the number of matching recordings 
-        // (only show the number if at least one filter is active)
-        if (numberMatchingRecordings === -1){
-            filtersBoxHeader.innerHTML = `Filter recordings`;
-        } else {
-            filtersBoxHeader.innerHTML = `Filter recordings (${numberMatchingRecordings} found)`;
-        }
+        // Only show the "Clear all" button while a filter is active (hidden
+        // via visibility, so its space is kept and nothing reflows)
+        clearAllBtn.classList.toggle('is-hidden', !filtersActive);
 
         // Animate the buttons movement
         fileButtons.forEach((btn, index) => {
@@ -1479,8 +1623,12 @@
         if (!query) {
             // If the search box is empty, show file list again
             fileList.style.display = 'flex';
+            updateSearchStatus();
             return;
         }
+
+        let totalMatches = 0;
+        let recordingsWithMatches = 0;
 
         filteredData.forEach(file => {
             const fileMatches = [];
@@ -1530,6 +1678,8 @@
 
             // --- Render results ---
             if (fileMatches.length > 0) {
+                totalMatches += fileMatches.length;
+                recordingsWithMatches += 1;
                 const fileHeader = document.createElement('h3');
                 fileHeader.textContent = file.displayName;
                 searchResults.appendChild(fileHeader);
@@ -1545,7 +1695,10 @@
             noResults.textContent = "No search match found";
             searchResults.appendChild(noResults);
         }
+
+        updateSearchStatus(totalMatches, recordingsWithMatches);
     };
+
 
     /**
      * Loads recording using the info in the global state object
@@ -1683,9 +1836,8 @@
     const speakersAndAnnotationsDiv = document.getElementById('speakersAndAnnotations');
     const annotationsDiv = document.getElementById('annotations');
     const searchResults = document.getElementById('searchResults');
-    const filtersBoxHeader = document.getElementById('filtersBoxHeader');
-    const filtersBoxBody = document.getElementById('filtersBoxBody');
-    const clearAllBtnContainer = document.getElementById('clearAllBtnContainer');
+    const searchStatus = document.getElementById('searchStatus');
+    const filterButtonsRow = document.getElementById('filterButtonsRow');
     const clearAllBtn = document.getElementById('clearAllBtn');
     const fileList = document.getElementById('fileList');
     const audio = document.getElementById('audio');
@@ -1751,7 +1903,7 @@
             
                 const newPickerDiv = document.createElement("div");
                 newPickerDiv.id = toSafeHtmlName(key) + "-picker";
-                clearAllBtnContainer.before(newPickerDiv)
+                filterButtonsRow.appendChild(newPickerDiv)
                 
                 return [key, new TagPicker(newPickerDiv.id, key, value, filterFileList)];
             })
@@ -1759,6 +1911,8 @@
 
     // Auxiliary data variables to use in searching and filtering
     var filteredData = transcripts;
+    var filtersActive = false;
+    updateSearchStatus();
 
     // Create licence and info modal windows ----
     if (licenceHTML === "") {
@@ -1871,6 +2025,10 @@
     // Clear all filters when clicking on Clear All button
     clearAllBtn.addEventListener('click', () => {
         Object.values(tagPickers).forEach(picker => picker.clear());
+        // Also clear the name filter, so that every filter is reset
+        if (speakerFilterBox.getValue() !== '') {
+            speakerFilterBox.clear();
+        }
     });
 
 
