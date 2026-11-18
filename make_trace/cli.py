@@ -197,6 +197,15 @@ processing_group.add_argument("--no_data",
                               help="Do not re-create data."
                              )
 
+processing_group.add_argument("--force_html",
+                              dest="force_html",
+                              action="store_true",
+                              help=("Replace TrACE.html even if it was " +
+                                    "changed by hand since it was created " +
+                                    "(a backup copy is kept). Without this, " +
+                                    "an edited page is kept as it is.")
+                             )
+
 processing_group.add_argument("--no_html",
                               dest="generate_html",
                               action="store_false", 
@@ -217,5 +226,10 @@ def run_cli():
     # Convert to dict to pass into the function in one go
     args_dict = vars(args)
     args_dict["report_callback"] = report
+
+    # Without --force_html, nobody is asked: an edited page is kept, with a
+    # warning about the option
+    if args_dict.pop("force_html"):
+        args_dict["confirm_replace_html"] = lambda path: True
     print(args_dict)
     do_processing(**args_dict)
