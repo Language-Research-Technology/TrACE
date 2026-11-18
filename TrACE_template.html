@@ -1897,10 +1897,8 @@
     // Initialize tag pickers for each filter
     const tagPickers = Object.fromEntries(
         Object.entries(speakersAttrs)
-            .filter(([key, value]) => key !== "Name")
             .map(([key, value]) => {    
-                if (key == "Name") return [];
-            
+
                 const newPickerDiv = document.createElement("div");
                 newPickerDiv.id = toSafeHtmlName(key) + "-picker";
                 filterButtonsRow.appendChild(newPickerDiv)
