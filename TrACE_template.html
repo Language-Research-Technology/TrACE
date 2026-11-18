@@ -1561,7 +1561,7 @@
                 allQueriesMatch = queryMatches.every(q => q === true)
 
                 return allQueriesMatch &&
-                    sp.Name.toLowerCase().includes(nameQuery) &&
+                    file.displayName.toLowerCase().includes(nameQuery) &&
                     file.speakers.some(fileSpeaker => fileSpeaker.toLowerCase() == sp.Name.toLowerCase());
             });
 
