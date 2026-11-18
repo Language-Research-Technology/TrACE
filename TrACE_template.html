@@ -1538,30 +1538,43 @@
     }
 
     /**
+     * Checks whether a speaker matches all the selected filters. For each
+     * filter, the speaker must have at least one of the selected values
+     * (e.g. with Languages: [English, Greek] selected, a speaker with
+     * "Italian;English" matches)
+     * @param {Object} speaker - entry of speakerIndex
+     * @param {Array} filterSelections - [speakerProperty, filterValues] pairs
+     * @returns {Boolean}
+     */
+    function speakerMatchesFilters(speaker, filterSelections) {
+        for (const [speakerProperty, filterValues] of filterSelections) {
+            const hasFilterValue = filterValues.some(
+                value => speaker.properties[speakerProperty].has(value)
+            );
+            if (!hasFilterValue) return false;
+        }
+        return true;
+    }
+
+    /**
      * Filters file list depending on the values in filter inputs
      */
     function filterFileList() {
 
-        const filtersSelected = Object.fromEntries(
-            Object.entries(tagPickers).map(([key, value]) => {
-                return [key, value.getSelected()];
-            })
-        );
-
-        const queries = Object.fromEntries(
-            Object.entries(filtersSelected).map(([key, value]) => {
-                if (filtersSelected[key].length !== 0) {
-                    return [key, filtersSelected[key]]
-                } else {
-                    return [key, speakersAttrs[key]]
-                }
-            })
-        );
+        // Selected values of each filter, as [speakerProperty, filterValues]
+        // pairs. Filters with nothing selected don't restrict the result, so
+        // they are left out
+        const filterSelections = [];
+        for (const [speakerProperty, picker] of Object.entries(tagPickers)) {
+            const filterValues = picker.getSelected();
+            if (filterValues.length > 0) {
+                filterSelections.push([speakerProperty, filterValues]);
+            }
+        }
 
         const nameQuery = speakerFilterBox.getValue().toLowerCase();
 
-        filtersActive = Object.values(filtersSelected).some(val => val.length > 0) ||
-            nameQuery.length > 0;
+        filtersActive = filterSelections.length > 0 || nameQuery.length > 0;
 
         // With no active filters, all recordings are searched
         filteredData = filtersActive ? [] : transcripts;
@@ -1573,36 +1586,31 @@
             firstPositions.push(btn.getBoundingClientRect());
         });
 
+        // Names (lowercased) of the speakers matching all the filters. This
+        // does not depend on the recording, so it is computed once
+        const matchingSpeakers = new Set();
+        for (const speaker of speakerIndex) {
+            if (speakerMatchesFilters(speaker, filterSelections)) {
+                matchingSpeakers.add(speaker.name);
+            }
+        }
+
         // Find recordings which match the specified filters
         fileButtons.forEach(btn => {
-            const file = findTranscript(btn.textContent)
-  
-            // Check if this file contains a matching speaker
-            const matchedSpeakers = speakers.filter(sp => {
-                const queryMatches = Object.entries(queries).map(([key, value]) => {
-                    // Test for values followed by ";" or end of line, to 
-                    // make sure that in attributes with multiple values only
-                    // the entire values produce the match
-                    //
-                    // E.g., that with values like "test;test2" choosing "test"
-                    // as the query doesn't select items which only have "test2"
-                    const regex = value.map(v => new RegExp(`(^|;)${RegExp.escape(v)}(;|$)`))
-                    return regex.some(re => re.test(sp[key]));
-                })
+            const file = findTranscript(btn.textContent);
 
-                allQueriesMatch = queryMatches.every(q => q === true)
-
-                return allQueriesMatch &&
-                    file.displayName.toLowerCase().includes(nameQuery) &&
-                    file.speakers.some(fileSpeaker => fileSpeaker.toLowerCase() == sp.Name.toLowerCase());
-            });
+            const nameMatches = file.displayName.toLowerCase().includes(nameQuery);
+            const hasMatchingSpeaker = file.speakers.some(
+                speakerName => matchingSpeakers.has(speakerName.toLowerCase())
+            );
+            const isMatch = nameMatches && hasMatchingSpeaker;
 
             //If no filter terms are entered, remove filter-related styles
             if (!filtersActive) {
                 btn.classList.remove('search-match');
                 btn.disabled = false;
             } else { // If the user specified filter terms...
-                if (matchedSpeakers.length === 0) { // Style and disable unmatched recordings
+                if (!isMatch) { // Style and disable unmatched recordings
                     btn.classList.remove('search-match');
                     btn.disabled = true;
                 } else { // Style and enable matched recordings
@@ -1637,7 +1645,7 @@
             });
             }
         });
-        
+
         // Simulate input to the search box, so that the search function is
         // run and the results are updated. This is needed when the search
         // terms are entered first, and only then some filter are applied
@@ -1925,7 +1933,21 @@
             return [key, valuesList];
         })
     );
-    
+
+    // Pre-processed speaker data for filtering: lowercased name, and the
+    // values of each speaker property as a Set, split by ";" for sub-values
+    // (so that "test" matches "test;test2" but not "test2" alone). E.g.:
+    //   { name: "maria rossi",
+    //     properties: { Languages: Set {"Italian", "English"}, ... } }
+    const speakerIndex = speakers.map(speaker => {
+        const properties = {};
+        for (const speakerProperty of Object.keys(speakersAttrs)) {
+            const rawValue = String(speaker[speakerProperty] ?? '');
+            properties[speakerProperty] = new Set(rawValue.split(';'));
+        }
+        return { name: String(speaker.Name).toLowerCase(), properties };
+    });
+
     // Initialize tag pickers for each filter
     const tagPickers = Object.fromEntries(
         Object.entries(speakersAttrs)
