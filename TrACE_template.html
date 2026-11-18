@@ -335,6 +335,24 @@
             background-color: var(--background-color);
         }
 
+        /* "Show more" button after a batch of search results */
+        .show-more-btn {
+            display: block;
+            width: 100%;
+            margin: 0.5em 0 1em;
+            padding: 0.5em;
+            cursor: pointer;
+            border: 1px dashed var(--primary-color);
+            border-radius: 6px;
+            background-color: var(--card-background-color);
+            color: var(--theme-text-color);
+            font-weight: 600;
+        }
+
+        .show-more-btn:hover {
+            filter: brightness(0.97);
+        }
+
         /* --- ANNOTATION BUTTONS --- */        
 
         .annotation-btn {
@@ -972,11 +990,16 @@
 
     // A text input which can be cleared with an X button 
     class ClearableTextInput {
-        // 1. Accept an optional callback function
-        constructor(inputElementId, clearBtnId, onChangeCallback = null) {
+        // 1. Accept an optional callback function, and an optional delay (in
+        // ms): when set, the callback only runs once the user has stopped
+        // typing for that long, instead of on every keystroke
+        constructor(inputElementId, clearBtnId, onChangeCallback = null,
+                    typingDelay = 0) {
             this.input = document.getElementById(inputElementId);
             this.clearBtn = document.getElementById(clearBtnId);
             this.onChangeCallback = onChangeCallback; // Save reference
+            this.typingDelay = typingDelay;
+            this.typingTimer = null;
 
             this.init();
         }
@@ -985,8 +1008,16 @@
             this.input.addEventListener('input', () => {
                 this.clearBtn.style.display = this.input.value.length > 0 ? 'block' : 'none';
 
-                // 2. Trigger callback on input changes (typing/deleting)
-                this.triggerCallback();
+                // 2. Trigger callback on input changes (typing/deleting),
+                // after the typing delay if there is one
+                if (this.typingDelay > 0) {
+                    clearTimeout(this.typingTimer);
+                    this.typingTimer = setTimeout(
+                        () => this.triggerCallback(), this.typingDelay
+                    );
+                } else {
+                    this.triggerCallback();
+                }
             });
 
             this.clearBtn.addEventListener('click', () => {
@@ -1006,8 +1037,11 @@
             return this.input.value.trim();
         }
 
-        // Helper method to safely fire the callback if it exists
+        // Helper method to safely fire the callback if it exists. Runs
+        // immediately, and cancels any callback still waiting for the typing
+        // delay (it would only repeat this one)
         triggerCallback() {
+            clearTimeout(this.typingTimer);
             if (typeof this.onChangeCallback === 'function') {
                 this.onChangeCallback(this.getValue());
             }
@@ -1657,7 +1691,6 @@
      * @param {String} value - search string
      */
     function searchAnnotations(value) {
-        const state = store.getState();
         const query = searchBox.getValue().toLowerCase();
         searchResults.innerHTML = '';
         if (!query) {
@@ -1667,77 +1700,151 @@
             return;
         }
 
+        // Find matching annotations, grouped by recording. Result buttons
+        // are created later, and only for the matches actually shown (see
+        // createRecordingResults())
+        const matchesByRecording = [];
         let totalMatches = 0;
-        let recordingsWithMatches = 0;
 
         filteredData.forEach(file => {
-            const fileMatches = [];
-
-            // --- Check annotations ---
-            file.annotations.forEach(ann => {
-                const contentLower = ann.content.toLowerCase();
-                if (contentLower.includes(query)) {
-                    // Exactly one capture group, so split() alternates
-                    // [text, match, text, ..., text]: matches at odd indices.
-                    const regex = new RegExp(`(${RegExp.escape(query)})`, 'gi');
-
-                    // For matches, escape HTML symbols and add higlight; for
-                    // other text in the annotation, just escape HTML symbols.
-                    // The i%2 checks whehter we deal with an odd or even 
-                    // split index -- see the previous comment
-                    const highlighted = ann.content.split(regex)
-                        .map((part, i) => i % 2
-                            ? `<span class="highlight">${escapeHtml(part)}</span>`
-                            : escapeHtml(part))
-                        .join('');
-
-                    const snippetBtn = document.createElement('button');
-                    snippetBtn.classList.add("query-match-btn");
-                    snippetBtn.innerHTML = `<strong>${escapeHtml(ann.TIER_ID)}:</strong> ${highlighted}`;
-
-                    snippetBtn.onclick = () => {
-                        store.setCurrentRecording(file.displayName);
-
-                        audio.currentTime = ann.start / 1000;
-                        audio.play();
-
-                        setTimeout(() => {
-                            const targetBtn = state.annotationButtons.find(
-                                b => parseInt(b.dataset.start) === ann.start
-                            );
-                            if (targetBtn) {
-                                targetBtn.scrollIntoView({behavior: 'smooth', block: 'center'});
-                                targetBtn.classList.add('highlight');
-                            }
-                        }, 200);
-                    };
-
-                    fileMatches.push(snippetBtn);
-                }
-            });
-
-            // --- Render results ---
-            if (fileMatches.length > 0) {
-                totalMatches += fileMatches.length;
-                recordingsWithMatches += 1;
-                const fileHeader = document.createElement('h3');
-                fileHeader.textContent = file.displayName;
-                searchResults.appendChild(fileHeader);
-                fileMatches.forEach(btn => searchResults.appendChild(btn));
-                // Hide file list buttons -- only search results will be shown
-                // if search returned any results
-                fileList.style.display = "none";
-            } 
+            // (contentLower is precomputed once at load time)
+            const anns = file.annotations.filter(
+                ann => ann.contentLower.includes(query)
+            );
+            if (anns.length > 0) {
+                matchesByRecording.push({ file, anns });
+                totalMatches += anns.length;
+            }
         });
 
-        if (searchResults.innerHTML === ''){
+        if (totalMatches === 0) {
             const noResults = document.createElement('h3');
             noResults.textContent = "No search match found";
             searchResults.appendChild(noResults);
+        } else {
+            // Hide file list buttons -- only search results will be shown
+            fileList.style.display = "none";
+
+            // Regex used to highlight the query in matching annotations.
+            // Exactly one capture group, so split() alternates [text, match,
+            // text, ..., text]: matches are at odd indices. Built once per
+            // search
+            const highlightRegex = new RegExp(`(${RegExp.escape(query)})`, 'gi');
+
+            // Results are collected off-page and added to the page in one
+            // step, which is much faster than adding them one by one
+            const fragment = document.createDocumentFragment();
+            matchesByRecording.forEach(({ file, anns }) => {
+                fragment.appendChild(
+                    createRecordingResults(file, anns, highlightRegex)
+                );
+            });
+            searchResults.appendChild(fragment);
         }
 
-        updateSearchStatus(totalMatches, recordingsWithMatches);
+        updateSearchStatus(totalMatches, matchesByRecording.length);
     };
+
+    /**
+     * Creates the search results for one recording: its name, then its
+     * matches in batches of searchResultsPerRecording, followed by a
+     * "Show more" button while there are more. Showing all matches at once
+     * is very slow for short queries, which can match tens of thousands of
+     * annotations; limiting each recording also keeps every recording with
+     * matches visible straight away
+     * @param {Object} file - transcript of the recording
+     * @param {Array} anns - matching annotations of this recording
+     * @param {RegExp} highlightRegex - regex to highlight the query
+     * @returns {Element} Container with this recording's results
+     */
+    function createRecordingResults(file, anns, highlightRegex) {
+        const group = document.createElement('div');
+
+        const fileHeader = document.createElement('h3');
+        fileHeader.textContent = file.displayName;
+        group.appendChild(fileHeader);
+
+        // The "Show more" button stays at the end of the group; each batch
+        // of results is inserted just before it
+        const moreBtn = document.createElement('button');
+        moreBtn.classList.add('show-more-btn');
+        group.appendChild(moreBtn);
+
+        // Number of matches shown so far. showNextBatch() is a closure: it
+        // keeps access to this variable after this function returns, so the
+        // count persists across "Show more" clicks (separately for each
+        // recording, as each call creates its own `shown`)
+        let shown = 0;
+        const showNextBatch = () => {
+            const end = Math.min(shown + searchResultsPerRecording, anns.length);
+            const batch = document.createDocumentFragment();
+            for (let i = shown; i < end; i++) {
+                batch.appendChild(
+                    createSearchResultButton(file, anns[i], highlightRegex)
+                );
+            }
+            group.insertBefore(batch, moreBtn);
+            shown = end;
+
+            const remaining = anns.length - shown;
+            if (remaining > 0) {
+                moreBtn.textContent =
+                    `Show ${Math.min(remaining, searchResultsPerRecording)} ` +
+                    `more in this recording (${remaining} remaining)`;
+            } else {
+                moreBtn.remove();
+            }
+        };
+
+        moreBtn.onclick = showNextBatch;
+        showNextBatch();
+
+        return group;
+    }
+
+    /**
+     * Creates the button for one search result: the annotation text with the
+     * query highlighted. Clicking it opens the recording and plays the
+     * annotation
+     * @param {Object} file - transcript containing the annotation
+     * @param {Object} ann - matching annotation
+     * @param {RegExp} highlightRegex - regex to highlight the query
+     * @returns {Element} The button
+     */
+    function createSearchResultButton(file, ann, highlightRegex) {
+        // For matches, escape HTML symbols and add higlight; for other text
+        // in the annotation, just escape HTML symbols. The i%2 checks whether
+        // we deal with an odd or even split index -- see the comment on
+        // highlightRegex in searchAnnotations()
+        const highlighted = ann.content.split(highlightRegex)
+            .map((part, i) => i % 2
+                ? `<span class="highlight">${escapeHtml(part)}</span>`
+                : escapeHtml(part))
+            .join('');
+
+        const snippetBtn = document.createElement('button');
+        snippetBtn.classList.add("query-match-btn");
+        snippetBtn.innerHTML = `<strong>${escapeHtml(ann.TIER_ID)}:</strong> ${highlighted}`;
+
+        snippetBtn.onclick = () => {
+            store.setCurrentRecording(file.displayName);
+
+            audio.currentTime = ann.start / 1000;
+            audio.play();
+
+            setTimeout(() => {
+                const targetBtn = store.getState().annotationButtons.find(
+                    b => parseInt(b.dataset.start) === ann.start
+                );
+                if (targetBtn) {
+                    targetBtn.scrollIntoView({behavior: 'smooth', block: 'center'});
+                    targetBtn.classList.add('highlight');
+                }
+            }, 200);
+        };
+
+        return snippetBtn;
+    }
 
 
     /**
@@ -1886,8 +1993,19 @@
     const openHelpBtn = document.getElementById('openHelpBtn');
 
     // Instantiate custom controls ----
-    const searchBox = new ClearableTextInput('searchBox', 'clearSearchBtn', 
-                                             searchAnnotations);
+    // The search runs once the user stops typing for a moment (in ms),
+    // rather than on every keystroke -- with long transcripts, searching for
+    // each intermediate prefix ("w", "wa", "wat", ...) causes lag
+    const searchTypingDelay = 200;
+
+    // Number of search results shown per recording at first (and added by
+    // each "Show more" click) -- creating tens of thousands of result
+    // buttons at once (e.g. when searching for "a") makes the page lag
+    const searchResultsPerRecording = 20;
+
+    const searchBox = new ClearableTextInput('searchBox', 'clearSearchBtn',
+                                             searchAnnotations,
+                                             searchTypingDelay);
 
     searchBox.input.placeholder = searchBoxPlaceholder;
     const speakerFilterBox = new ClearableTextInput('speakerFilterBox', 
@@ -1960,6 +2078,14 @@
                 return [key, new TagPicker(newPickerDiv.id, key, value, filterFileList)];
             })
     );
+
+    // Prepare transcripts for searching: store a lowercased copy of each
+    // annotation's text once, instead of lowercasing it on every search
+    transcripts.forEach(transcript => {
+        transcript.annotations.forEach(ann => {
+            ann.contentLower = ann.content.toLowerCase();
+        });
+    });
 
     // Auxiliary data variables to use in searching and filtering
     var filteredData = transcripts;
