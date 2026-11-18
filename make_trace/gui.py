@@ -12,6 +12,8 @@ from processing import do_processing
 
 AUDIO_EXTENSIONS = {".mp3", ".wav", ".ogg", ".m4a", ".flac", ".aac", ".opus"}
 RECORDINGS_COLUMNS = ["audio_file", "elan_file", "display_name"]
+# Image types that can be used as logos (as in processing.encode_logo_image)
+LOGO_EXTENSIONS = {".png", ".jpg", ".jpeg", ".gif", ".svg", ".webp"}
 
 # ------------------------------------------------------------------
 # PATH CHECKS
@@ -112,6 +114,51 @@ def check_markdown(path):
         return "error", "file not found"
 
     return "ok", ""
+
+def check_logos(path):
+    """Check a logos CSV the way processing.read_logos() reads it"""
+
+    if not Path(path).is_file():
+        return "error", "file not found"
+
+    try:
+        # utf-8-sig skips the byte order mark which Excel adds to CSV files
+        with open(Path(path), encoding="utf-8-sig", newline="") as file:
+            reader = csv.DictReader(file)
+            columns = [c.strip().lower() for c in (reader.fieldnames or [])]
+            rows = [{k.strip().lower(): (v or "").strip()
+                     for k, v in row.items() if k}
+                    for row in reader]
+    except (OSError, UnicodeDecodeError, csv.Error):
+        return "error", "cannot read as UTF-8 CSV"
+
+    if "image" not in columns and "text" not in columns:
+        return "error", "no 'image' or 'text' column"
+
+    # Rows that processing would skip: no image or text, or a missing or
+    # unsupported image (relative to the CSV file)
+    logos = skipped = 0
+    for row in rows:
+        if not any(row.values()):
+            continue
+        image = row.get("image", "")
+        if image:
+            image_file = Path(path).parent.joinpath(image)
+            usable = (image_file.is_file() and
+                      image_file.suffix.lower() in LOGO_EXTENSIONS)
+        else:
+            usable = bool(row.get("text", ""))
+        if usable:
+            logos += 1
+        else:
+            skipped += 1
+
+    if skipped:
+        return "warn", f"{plural(logos, 'logo')} · {skipped} skipped"
+    if logos == 0:
+        return "warn", "no logos in the file"
+
+    return "ok", plural(logos, "logo")
 
 def check_output(path):
     if not Path(path).is_dir():
@@ -697,6 +744,8 @@ def run_gui():
                                     gui_vars["elan_dir"].get())
         if var_name == "output_dir":
             return check_output(value)
+        if var_name == "logos_file":
+            return check_logos(value)
         return check_markdown(value)
 
     path_widgets = {}
