@@ -1072,6 +1072,7 @@
                 if (!isOpen) {
                     // Open the overlay
                     this.container.classList.add('open');
+                    this.fitWidth();
                 } else {
                     this.container.classList.remove('open');
                 }
@@ -1093,6 +1094,37 @@
                     this.container.classList.remove('open');
                 }
             });
+        }
+
+        // Shrink the open dropdown to the width of its widest row of chips.
+        //
+        // The dropdown is sized with "width: max-content; max-width: 300px".
+        // When the chips don't fit on one line, CSS caps the box at 300px
+        // and wraps the chips, but never shrinks the box back to the wrapped
+        // rows -- leaving empty space on the right. So we measure where the
+        // rightmost chip ends and set the width explicitly
+        fitWidth() {
+            // Reset to the CSS sizing first, so the chips wrap as they would
+            // naturally (also needed if the dropdown was sized before)
+            this.container.style.width = '';
+
+            const chips = this.container.querySelectorAll('.chip');
+            if (chips.length === 0) return;
+
+            const box = this.container.getBoundingClientRect();
+            const chipsRight = Math.max(
+                ...[...chips].map(chip => chip.getBoundingClientRect().right)
+            );
+            const style = getComputedStyle(this.container);
+            const rightEdge = parseFloat(style.paddingRight) +
+                              parseFloat(style.borderRightWidth);
+
+            // Only ever shrink (never widen beyond the CSS-computed size);
+            // ceil() avoids re-wrapping because of sub-pixel rounding
+            const fitted = Math.ceil(chipsRight - box.left + rightEdge);
+            if (fitted < box.width) {
+                this.container.style.width = `${fitted}px`;
+            }
         }
 
         renderChips() {
