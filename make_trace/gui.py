@@ -693,7 +693,8 @@ def run_gui():
     # Warnings and errors tint the border of a card, or the path text
 
     csv_types = [('CSV Files', '*.csv')]
-    md_types = [('Markdown Files', '*.md'), ('Text Files', '*.txt')]
+    # One filter for both Markdown and plain text, so that neither is hidden
+    md_types = [('Markdown or Text Files', ('*.md', '*.markdown', '*.txt'))]
 
     # (card border color, status icon, status text color)
     status_styles = {
@@ -727,8 +728,12 @@ def run_gui():
         canvas.scale("all", 0, 0, scale * size / 32, scale * size / 32)
 
         if filetypes is not None and size >= 32:
-            # Show the extension of the first file type, e.g. "CSV"
-            ext = filetypes[0][1].lstrip("*.").upper()
+            # Show the extension of the first file type, e.g. "CSV". A file
+            # type can have one pattern ("*.csv") or several ("*.md", "*.txt")
+            patterns = filetypes[0][1]
+            if not isinstance(patterns, str):
+                patterns = patterns[0]
+            ext = patterns.lstrip("*.").upper()
             canvas.create_text(px(16), px(19), text=ext, fill="white",
                                font=icon_font)
 
