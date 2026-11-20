@@ -1,3 +1,13 @@
+"""
+Graphical interface for TrACE preparation (tkinter)
+
+The window has a header, two sections (input files and TrACE page options)
+and a bottom bar with the output folder and the Run button. The fields are
+defined in tables at the top of this file, followed by the colors; the
+layout is built in run_gui(). The checks of the chosen paths are in
+checks.py.
+"""
+
 import tkinter as tk
 import tkinter.font as tkFont
 from tkinter import colorchooser, filedialog, messagebox, ttk
@@ -136,7 +146,18 @@ TOOLTIP_TEXT = "white"
 # ------------------------------------------------------------------
 
 def shorten_path(path, max_len=40):
-    """Shorten a path from the left, keeping as many trailing parts as fit"""
+    """
+    Shorten a path from the left, keeping as many trailing parts as fit
+
+    E.g. "/home/user/fieldwork/project/audio" becomes "…/project/audio".
+
+    Args:
+        path: path as a string
+        max_len: maximum length of the result, in characters
+
+    Returns:
+        str: the path, or a shortened version starting with "…"
+    """
 
     if len(path) <= max_len:
         return path
@@ -156,11 +177,20 @@ def shorten_path(path, max_len=40):
     return os.path.join("…", tail)
 
 def run_gui():
+    """
+    Build the TrACE preparation window and run it until it is closed
+
+    The values of the fields are kept in tkinter variables (gui_vars), named
+    after the arguments of processing.do_processing(), which gets them all
+    when Run is clicked.
+    """
 
     def report(message, type="info"):
+        """Show a problem reported by processing in an error dialog"""
         messagebox.showerror("TrACE preparation", str(message))
 
     def on_run(gui_vars):
+        """Pass the values of all fields to processing (the Run button)"""
         input_vars = {k:v.get() for k,v in gui_vars.items()}
 
         # Empty paths are passed on as None
@@ -362,6 +392,7 @@ def run_gui():
             self.tw = None
 
     def unfocus_entry(event):
+        """Move the focus away from a text field, e.g. on Enter"""
         # Shift focus to the root window to clear the Entry cursor
         root.focus_set()
 
@@ -385,6 +416,7 @@ def run_gui():
     scale = max(1.0, root.winfo_fpixels("1i") / 96)
 
     def px(n):
+        """Scale a size in pixels for the display (e.g. 150% on Windows)"""
         return round(n * scale)
 
     default_font = tkFont.nametofont("TkDefaultFont")
@@ -580,6 +612,7 @@ def run_gui():
         return main_frame.winfo_reqheight() > body_canvas.winfo_height()
 
     def update_scrolling(event=None):
+        """Show the scrollbar only when the sections don't fit"""
         body_canvas.configure(scrollregion=(0, 0, 
                                             main_frame.winfo_reqwidth(),
                                             main_frame.winfo_reqheight()))
@@ -598,6 +631,7 @@ def run_gui():
     body_canvas.bind("<Configure>", on_canvas_resize)
 
     def on_mouse_wheel(event):
+        """Scroll the sections with the mouse wheel, if they don't fit"""
         if not needs_scrolling():
             return
         if event.num == 4:
@@ -616,6 +650,7 @@ def run_gui():
 
     # Sections: a bold heading followed by a frame for the contents
     def add_section(i, title):
+        """Add section number i: a heading and a frame for its contents"""
         ttk.Label(
             main_frame,
             text=title,
@@ -700,6 +735,7 @@ def run_gui():
                                font=icon_font)
 
     def check_path(var_name, value):
+        """Run the check for a path field; see checks.py"""
         if var_name == "audio_dir":
             return check_folder(value, AUDIO_EXTENSIONS, "audio")
         if var_name == "elan_dir":
@@ -721,6 +757,10 @@ def run_gui():
     run_controls = {}
 
     def refresh_paths(*args):
+        """
+        Check all paths and show the results: status, path and buttons of
+        each field, and the hint and state of the Run button
+        """
         # All paths are refreshed together, since the recordings check
         # depends on the audio and ELAN folders
         missing = []
@@ -831,6 +871,7 @@ def run_gui():
 
     def add_choose_buttons(parent, var, command, widget, row, column,
                            removable=True):
+        """Add the Choose/Change button, and optionally the ✕ button"""
         widget["choose"] = ttk.Button(parent, width=8, style="Card.TButton",
                                       command=command)
         widget["choose"].grid(row=row, column=column, padx=(px(8), 0))
@@ -940,6 +981,7 @@ def run_gui():
     options_card.columnconfigure(2, minsize=px(28))
 
     def option_label(text, row, column, help_text):
+        """Add a label with a tooltip to the page options grid"""
         label = ttk.Label(options_card, text=text, style="CardText.TLabel")
         label.grid(row=row, column=column, sticky="w", padx=(0, px(12)),
                    pady=px(4))
@@ -970,6 +1012,7 @@ def run_gui():
     color_vars = [var_name for var_name, _ in PAGE_COLORS]
 
     def pick_color(event, var):
+        """Open the color picker for a swatch"""
         color = colorchooser.askcolor(color=var.get())[1]
         if color:
             # The swatch is updated by the trace on the variable
@@ -1079,6 +1122,7 @@ def run_gui():
         gui_vars[var_name] = tk.BooleanVar(value=True)
 
     def open_output_options():
+        """Open the small window with the output options"""
         dialog = tk.Toplevel(root, bg=CARD_BG, padx=px(20), pady=px(16))
         dialog.title("Output options")
         dialog.transient(root)

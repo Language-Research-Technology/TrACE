@@ -22,10 +22,22 @@ LOGO_EXTENSIONS = {".png", ".jpg", ".jpeg", ".gif", ".svg", ".webp"}
 # ------------------------------------------------------------------
 
 def plural(n, noun):
+    """Return e.g. '1 speaker' or '5 speakers'"""
     return f"{n} {noun}{'' if n == 1 else 's'}"
 
 def read_csv(path):
-    """Read a CSV the same way processing does; return (columns, rows)"""
+    """
+    Read a CSV file the same way processing does
+
+    Args:
+        path: path to the CSV file
+
+    Returns:
+        tuple: list of column names, and list of rows as dictionaries
+
+    Raises:
+        OSError, UnicodeDecodeError, csv.Error: if the file can't be read
+    """
 
     with open(Path(path), mode='r', encoding='utf-8') as file:
         reader = csv.DictReader(file)
@@ -33,6 +45,17 @@ def read_csv(path):
         return (reader.fieldnames or []), rows
 
 def check_folder(path, extensions, noun):
+    """
+    Check that a folder exists and contains files of the given types
+
+    Args:
+        path: path to the folder
+        extensions: set of file extensions to count, e.g. {".eaf"}
+        noun: what the files are called in the info, e.g. "ELAN"
+
+    Returns:
+        tuple: status ("ok", "warn" or "error") and a short info text, e.g. "12 ELAN files"
+    """
     folder = Path(path)
     if not folder.is_dir():
         return "error", "folder not found"
@@ -45,6 +68,15 @@ def check_folder(path, extensions, noun):
     return "ok", plural(n, f"{noun} file")
 
 def check_speakers(path):
+    """
+    Check the speakers CSV: it must be readable and have a 'Name' column
+
+    Args:
+        path: path to the CSV file
+
+    Returns:
+        tuple: status ("ok", "warn" or "error") and a short info text, e.g. "5 speakers"
+    """
     if not Path(path).is_file():
         return "error", "file not found"
 
@@ -59,6 +91,22 @@ def check_speakers(path):
     return "ok", plural(len(rows), "speaker")
 
 def check_recordings(path, audio_dir, elan_dir):
+    """
+    Check the recordings CSV and the files it refers to
+
+    The CSV must be readable and have all the RECORDINGS_COLUMNS. If the
+    audio and ELAN folders are valid, the audio and ELAN files of each
+    recording are looked up in them; missing files give a warning.
+
+    Args:
+        path: path to the CSV file
+        audio_dir: path to the audio folder, or an empty string
+        elan_dir: path to the ELAN folder, or an empty string
+
+    Returns:
+        tuple: status ("ok", "warn" or "error") and a short info text, e.g. "12 recordings" or
+        "12 recordings · missing 1 audio"
+    """
     if not Path(path).is_file():
         return "error", "file not found"
 
@@ -89,13 +137,35 @@ def check_recordings(path, audio_dir, elan_dir):
     return "ok", info
 
 def check_markdown(path):
+    """
+    Check that a help or licence file exists
+
+    Args:
+        path: path to the file
+
+    Returns:
+        tuple: status ("ok", "warn" or "error") and a short info text (empty for an existing file)
+    """
     if not Path(path).is_file():
         return "error", "file not found"
 
     return "ok", ""
 
 def check_logos(path):
-    """Check a logos CSV the way processing.read_logos() reads it"""
+    """
+    Check a logos CSV the way processing.read_logos() reads it
+
+    A file without an 'image' or a 'text' column is an error, since no
+    logos would be added. Rows that processing would skip (no image or
+    text, or a missing or unsupported image) give a warning.
+
+    Args:
+        path: path to the CSV file
+
+    Returns:
+        tuple: status ("ok", "warn" or "error") and a short info text, e.g. "3 logos" or
+        "2 logos · 1 skipped"
+    """
 
     if not Path(path).is_file():
         return "error", "file not found"
@@ -140,6 +210,15 @@ def check_logos(path):
     return "ok", plural(logos, "logo")
 
 def check_output(path):
+    """
+    Check the output folder, and whether it already has TrACE files
+
+    Args:
+        path: path to the folder, in which a TrACE folder will be created
+
+    Returns:
+        tuple: status ("ok", "warn" or "error") and a short info text
+    """
     if not Path(path).is_dir():
         return "error", "folder not found"
 
