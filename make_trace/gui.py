@@ -1,6 +1,6 @@
 import tkinter as tk
 import tkinter.font as tkFont
-from tkinter import colorchooser, filedialog, ttk
+from tkinter import colorchooser, filedialog, messagebox, ttk
 from pathlib import Path
 import ctypes
 import sys
@@ -172,7 +172,7 @@ def check_output(path):
 def run_gui():
 
     def report(message, type="info"):
-        tk.messagebox.showerror(type, message)
+        messagebox.showerror("TrACE preparation", str(message))
 
     def on_run(gui_vars):
         input_vars = {k:v.get() for k,v in gui_vars.items()}
@@ -223,13 +223,6 @@ def run_gui():
 
         if choice:
             var.set(choice)
-
-    def pick_color(color_var, button):
-        """Open colour picker"""
-        color = colorchooser.askcolor()[1]
-        if color:
-            color_var.set(color)
-            button.configure(bg=color)
 
     # https://stackoverflow.com/questions/3221956/how-do-i-display-tooltips-in-tkinter
     class Tooltip:
