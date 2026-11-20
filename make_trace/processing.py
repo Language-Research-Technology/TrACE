@@ -711,7 +711,9 @@ def do_processing(audio_dir, elan_dir, output_dir,
     Returns:
         dict: output_dir; html: "created", "replaced", "kept" or
         "skipped"; backup: path of the backup of the replaced page, or
-        None. None if the input paths are invalid.
+        None. None if processing stopped because of a problem (invalid
+        input paths, or audio files that couldn't be copied); the problem
+        is passed to report_callback().
     """
 
     logger.info("Started preparing TrACE data")
@@ -743,11 +745,27 @@ def do_processing(audio_dir, elan_dir, output_dir,
             audio_target_dir.mkdir(exist_ok=True)
             logger.info(f"Created output audio directory: {audio_target_dir}")
 
+        # If some files can't be copied (e.g. the disk is full), stop: the
+        # TrACE folder could otherwise keep old versions of them unnoticed
         try:
             shutil.copytree(audio_dir, audio_target_dir, dirs_exist_ok=True)
             logger.info("Successfully copied audio")
-        except Exception as e:
-            logger.warning(f"Error while copying audio files: {e}")
+        except shutil.Error as e:
+            # copytree() copies what it can, then lists the files that failed
+            failed = [f"{Path(source).name}: {reason}"
+                      for source, target, reason in e.args[0]]
+            message = ("Some audio files could not be copied, so the TrACE "
+                       "folder may contain old versions of them or none at "
+                       "all:\n\t" + "\n\t".join(failed[:10]))
+            if len(failed) > 10:
+                message += f"\n\t... and {len(failed) - 10} more"
+            logger.error("Some audio files could not be copied")
+            report_callback(message)
+            return
+        except OSError as e:
+            logger.error("The audio files could not be copied")
+            report_callback(f"The audio files could not be copied: {e}")
+            return
 
 
     if generate_data:
