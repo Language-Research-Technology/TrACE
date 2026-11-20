@@ -73,21 +73,6 @@ PAGE_COLORS = [
     ("filter_match_color",    "Filter match color"),
 ]
 
-# Output options, in a small window of their own, since they are rarely
-# changed
-OUTPUT_OPTIONS = [
-    # variable name           title                   explanation
-    ("copy_audio",            "Copy audio files",
-     "Copy the audio files into the TrACE folder. Turn off if they have "
-     "already been copied and haven't changed."),
-    ("generate_data",         "Recreate data",
-     "Recreate the transcripts and speaker data. This is fast, so it "
-     "can usually stay on."),
-    ("generate_html",         "Recreate the TrACE page",
-     "Create the TrACE page from scratch. Turn off if you edited the "
-     "page by hand and want to keep your changes."),
-]
-
 # ------------------------------------------------------------------
 # COLORS
 #
@@ -189,6 +174,72 @@ def run_gui():
         """Show a problem reported by processing in an error dialog"""
         messagebox.showerror("TrACE preparation", str(message))
 
+    def confirm_replace_html(html_file):
+        """Ask whether to replace a page that was edited by hand"""
+
+        answer = {"replace": False}
+
+        dialog = tk.Toplevel(root, bg=CARD_BG, padx=px(20), pady=px(16))
+        dialog.title("TrACE page was edited")
+        dialog.transient(root)
+        dialog.resizable(False, False)
+
+        ttk.Label(
+            dialog,
+            text="TrACE.html has been edited since it was created",
+            style="CardTitle.TLabel"
+        ).grid(row=0, column=0, columnspan=2, sticky="w")
+
+        ttk.Label(
+            dialog,
+            text=("Replacing it will discard those edits; a backup copy "
+                  "will be kept next to it.\n\n"
+                  "If you keep it, changes to the title, header, colors, "
+                  "help, licence or logos won't be applied."),
+            style="CardText.TLabel",
+            wraplength=px(380),
+            justify="left"
+        ).grid(row=1, column=0, columnspan=2, sticky="w", pady=(px(6), 0))
+
+        def close(replace):
+            answer["replace"] = replace
+            dialog.destroy()
+
+        ttk.Button(
+            dialog,
+            text="Replace page",
+            style="Card.TButton",
+            command=lambda: close(True)
+        ).grid(row=2, column=0, sticky="e", pady=(px(16), 0))
+
+        # Keeping the page is the safe choice, so it's the default
+        keep = ttk.Button(
+            dialog,
+            text="Keep my page",
+            style="Accent.TButton",
+            command=lambda: close(False)
+        )
+        keep.grid(row=2, column=1, sticky="e", padx=(px(8), 0),
+                  pady=(px(16), 0))
+        dialog.columnconfigure(0, weight=1)
+
+        dialog.bind("<Return>", lambda event: close(False))
+        dialog.bind("<Escape>", lambda event: close(False))
+        dialog.protocol("WM_DELETE_WINDOW", lambda: close(False))
+
+        # Show it in the middle of the main window
+        dialog.update_idletasks()
+        x = root.winfo_rootx() + (root.winfo_width() -
+                                  dialog.winfo_reqwidth()) // 2
+        y = root.winfo_rooty() + (root.winfo_height() -
+                                  dialog.winfo_reqheight()) // 2
+        dialog.geometry(f"+{max(0, x)}+{max(0, y)}")
+        keep.focus_set()
+        dialog.grab_set()
+        root.wait_window(dialog)
+
+        return answer["replace"]
+
     def on_run(gui_vars):
         """Pass the values of all fields to processing (the Run button)"""
         input_vars = {k:v.get() for k,v in gui_vars.items()}
@@ -199,9 +250,37 @@ def run_gui():
             if input_vars[v].strip() == "":
                 input_vars[v] = None
 
+        # All steps are always run from the GUI: copying the audio and
+        # recreating the data are quick for typical collections, and edited
+        # pages are only replaced after asking
+        input_vars.update(copy_audio=True, generate_data=True,
+                          generate_html=True)
         input_vars["report_callback"] = report
+        input_vars["confirm_replace_html"] = confirm_replace_html
 
-        do_processing(**input_vars)
+        root.configure(cursor="watch")
+        root.update_idletasks()
+        try:
+            result = do_processing(**input_vars)
+        except Exception as e:
+            report(f"Something went wrong: {e}")
+            return
+        finally:
+            root.configure(cursor="")
+
+        if result is None:
+            # The problem was already reported
+            return
+
+        message = f"Your TrACE page is in:\n{result['output_dir']}"
+        if result["html"] == "kept":
+            message += ("\n\nYour edited TrACE.html was kept, so changes to "
+                        "the title, header, colors, help, licence or logos "
+                        "were not applied.")
+        elif result["backup"] is not None:
+            message += ("\n\nThe previous page was saved as:\n" +
+                        result["backup"].name)
+        messagebox.showinfo("TrACE is ready", message)
 
 
     def browse_file(var, filetypes):
@@ -1079,7 +1158,7 @@ def run_gui():
     update_reset_button()
 
     # ------------------------------------------------------------------
-    # Bottom bar: output folder, output options and the Run button
+    # Bottom bar: output folder and the Run button
     # ------------------------------------------------------------------
 
     # A white bar with a thin line above it; the right edge lines up with
@@ -1116,70 +1195,6 @@ def run_gui():
     add_choose_buttons(button_frame, var, command, widget, row=1, column=2,
                        removable=False)
     widget["choose"].grid(padx=(px(16), 0))
-
-    # Output options, in a small window of their own
-    for var_name, _, _ in OUTPUT_OPTIONS:
-        gui_vars[var_name] = tk.BooleanVar(value=True)
-
-    def open_output_options():
-        """Open the small window with the output options"""
-        dialog = tk.Toplevel(root, bg=CARD_BG, padx=px(20), pady=px(16))
-        dialog.title("Output options")
-        dialog.transient(root)
-        dialog.resizable(False, False)
-
-        for i, (var_name, label_text, explanation) in enumerate(
-                OUTPUT_OPTIONS):
-            ttk.Checkbutton(
-                dialog,
-                text=label_text,
-                variable=gui_vars[var_name],
-                style="Card.TCheckbutton"
-            ).grid(row=2 * i, column=0, sticky="w",
-                   pady=(px(10) if i else 0, 0))
-
-            # Indented to line up with the checkbox text
-            ttk.Label(
-                dialog,
-                text=explanation,
-                style="Card.TLabel",
-                wraplength=px(340),
-                justify="left"
-            ).grid(row=2 * i + 1, column=0, sticky="w", padx=(px(26), 0))
-
-        ttk.Button(
-            dialog,
-            text="Close",
-            style="Card.TButton",
-            command=dialog.destroy
-        ).grid(row=2 * len(OUTPUT_OPTIONS), column=0, sticky="e",
-               pady=(px(16), 0))
-
-        dialog.bind("<Escape>", lambda event: dialog.destroy())
-
-        # Show it in the middle of the main window
-        dialog.update_idletasks()
-        x = root.winfo_rootx() + (root.winfo_width() -
-                                  dialog.winfo_reqwidth()) // 2
-        y = root.winfo_rooty() + (root.winfo_height() -
-                                  dialog.winfo_reqheight()) // 2
-        dialog.geometry(f"+{max(0, x)}+{max(0, y)}")
-        dialog.grab_set()
-
-    options_button = ttk.Button(button_frame, style="Card.TButton",
-                                command=open_output_options)
-    options_button.grid(row=1, column=4, padx=(px(8), 0))
-
-    def update_options_button(*args):
-        # Show when some steps are turned off, so it's not forgotten
-        n_off = sum(not gui_vars[v].get() for v, _, _ in OUTPUT_OPTIONS)
-        options_button.configure(
-            text=f"Options ({n_off} off)…" if n_off else "Options…"
-        )
-
-    for var_name, _, _ in OUTPUT_OPTIONS:
-        gui_vars[var_name].trace_add("write", update_options_button)
-    update_options_button()
 
     # Run button, with a hint about what's missing
     run_controls["hint"] = ttk.Label(button_frame, style="Card.TLabel",
