@@ -489,6 +489,21 @@ def js_value(value):
     return json.dumps(value, ensure_ascii=False).replace("</", "<\\/")
 
 
+# Page options: the settings of the page itself. Each is written on a line
+# of its own in the template, matched by the pattern, as a JavaScript value
+# ("js") or a CSS color ("css"). The same table is used to read them back
+# from an existing page
+PAGE_OPTIONS = {
+    # option                 pattern in the template                format
+    "title":               (r"^(.*const pageTitle = ).*$",          "js"),
+    "header":              (r"^(.*const pageHeader = ).*$",         "js"),
+    "ann_note_tier":       (r"^(.*const annNoteTier = ).*$",        "js"),
+    "primary_color":       (r"^(.*--primary-color: ).*$",           "css"),
+    "ann_highlight_color": (r"^(.*--ann-highlight-color: ).*$",     "css"),
+    "filter_match_color":  (r"^(.*--filter-match-color: ).*$",      "css"),
+}
+
+
 def render_template(template_str, 
                     output_file,
                     title, 
@@ -529,35 +544,17 @@ def render_template(template_str,
 
     out = template_str
 
-    # Page title 
-    out = insert_template_option('^(.*const pageTitle = ).*$', 
-                                 f'{js_value(title)};', 
-                                 out) 
+    # Page options: title, header, notes tier and colors
+    values = {"title": title, "header": header,
+              "ann_note_tier": ann_note_tier, "primary_color": primary_color,
+              "ann_highlight_color": ann_highlight_color,
+              "filter_match_color": filter_match_color}
 
-    # Interface header 
-    out = insert_template_option('^(.*const pageHeader = ).*$', 
-                                 f'{js_value(header)};', 
-                                 out)
-
-    # Note tier
-    out = insert_template_option('^(.*const annNoteTier = ).*$', 
-                                 f'{js_value(ann_note_tier)};',
-                                 out)
-
-    # Main interface color
-    out = insert_template_option('^(.*--primary-color: ).*$', 
-                                 f'{primary_color};', 
-                                 out)
-
-    # Annotation highlight color 
-    out = insert_template_option('^(.*--ann-highlight-color: ).*$', 
-                                 f'{ann_highlight_color};',
-                                 out)
-
-    # Filter match color
-    out = insert_template_option('^(.*--filter-match-color: ).*$', 
-                                 f'{filter_match_color};',
-                                 out)
+    for option, (pattern, value_format) in PAGE_OPTIONS.items():
+        value = values[option]
+        if value_format == "js":
+            value = js_value(value)
+        out = insert_template_option(pattern, f'{value};', out)
 
     # Header logos
     out = insert_template_option('^(.*const headerLogos = ).*$',
@@ -572,6 +569,47 @@ def render_template(template_str,
 
     with open(Path(output_file), "w", newline="", encoding="utf-8") as f:
         f.write(add_fingerprint(out))
+
+def read_page_options(html_file):
+    """
+    Read the page options (title, colors, ...) from an existing TrACE page
+
+    Options that can't be found or read (e.g. after a hand edit which broke
+    the line) are left out, with a warning for the latter.
+
+    Args:
+        html_file: path to the TrACE page
+
+    Returns:
+        dict: option name -> value; empty if the page doesn't exist
+    """
+    try:
+        with open(Path(html_file), encoding="utf-8") as f:
+            text = f.read()
+    except (OSError, UnicodeDecodeError):
+        return {}
+
+    options = {}
+    for option, (pattern, value_format) in PAGE_OPTIONS.items():
+        match = re.search(pattern, text, flags=re.MULTILINE)
+        if match is None:
+            continue
+
+        # The value is the rest of the line, ending with ";"
+        raw = text[match.end(1):match.end()].strip().removesuffix(";").strip()
+        try:
+            value = json.loads(raw) if value_format == "js" else raw
+        except json.JSONDecodeError:
+            value = None
+        if (not isinstance(value, str) or (value_format == "css" and
+                not re.fullmatch(r"#[0-9a-fA-F]{6}", value))):
+            logger.warning(f"Could not read the {option} from {html_file}: "
+                           f"{raw}")
+            continue
+
+        options[option] = value
+
+    return options
 
 # ======================== Edited page detection ===============================
 
