@@ -4,7 +4,7 @@ import textwrap
 from pathlib import Path
 
 from constants import DEFAULTS, HELP_STRINGS
-from processing import (do_processing, read_page_content,
+from processing import (do_processing, page_file, read_page_content,
                         read_previous_settings, LAST_RUN_FILE,
                         SAVED_OPTIONS)
 
@@ -271,9 +271,7 @@ def run_cli():
 
     # Say which content of the existing page is kept
     if args_dict["generate_html"]:
-        html_file = Path(args_dict["output_dir"]).joinpath("TrACE",
-                                                           "TrACE.html")
-        page_content = read_page_content(html_file)
+        page_content = read_page_content(page_file(args_dict["output_dir"]))
         for option, what in [("help_file", "Help text"),
                              ("licence_file", "Licence text"),
                              ("logos_file", "Logos")]:

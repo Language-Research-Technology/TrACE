@@ -596,6 +596,11 @@ def render_template(template_str,
 
 # ======================== Reading an existing page ===========================
 
+def page_file(output_dir, final_dir="TrACE"):
+    """Path of the TrACE page in an output folder"""
+    return Path(output_dir).joinpath(final_dir, "TrACE.html")
+
+
 def read_page_text(html_file):
     """The text of an existing TrACE page, or None if it can't be read"""
     try:
@@ -848,8 +853,7 @@ def read_previous_settings(output_dir, final_dir="TrACE"):
         LAST_RUN_FILE)
     """
     last_run = read_last_run(output_dir)
-    page_options = read_page_options(
-        Path(output_dir).joinpath(final_dir, "TrACE.html"))
+    page_options = read_page_options(page_file(output_dir, final_dir))
 
     settings, origins = {}, {}
     for option in SAVED_OPTIONS:
@@ -1142,7 +1146,7 @@ def do_processing(audio_dir, elan_dir, output_dir,
 
     if generate_html:
         result["html"], result["backup"] = create_page(
-            output_dir.joinpath("TrACE.html"),
+            page_file(output_root, final_dir),
             confirm_replace_html=confirm_replace_html,
             title=title,
             header=header,

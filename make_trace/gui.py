@@ -17,9 +17,9 @@ import sys
 import os
 
 from constants import HELP_STRINGS, DEFAULTS
-from processing import (do_processing, read_page_content, read_page_options,
-                        read_previous_settings, normalize_color,
-                        LAST_RUN_FILE)
+from processing import (do_processing, page_file, read_page_content,
+                        read_page_options, read_previous_settings,
+                        normalize_color, LAST_RUN_FILE)
 from checks import (AUDIO_EXTENSIONS, check_folder, check_speakers,
                     check_recordings, check_markdown, check_logos,
                     check_output)
@@ -1417,8 +1417,7 @@ def run_gui():
             if option in gui_vars and value is not None:
                 gui_vars[option].set(value)
 
-        html_file = Path(output_dir).joinpath("TrACE", "TrACE.html")
-        page_content = read_page_content(html_file)
+        page_content = read_page_content(page_file(output_dir))
         for var_name, _, _ in OPTIONAL_FILES:
             # Content removed in the last run ("") stays removed
             path_widgets[var_name]["keep"] = (var_name in page_content and
@@ -1442,8 +1441,7 @@ def run_gui():
     def read_existing_page():
         """Read the page options of the existing page in the output folder"""
         output_dir = gui_vars[OUTPUT_FOLDER[0]].get().strip() or "."
-        existing_page["options"] = read_page_options(
-            Path(output_dir).joinpath("TrACE", "TrACE.html"))
+        existing_page["options"] = read_page_options(page_file(output_dir))
         update_change_markers()
 
     gui_vars[OUTPUT_FOLDER[0]].trace_add("write", load_output_folder)
