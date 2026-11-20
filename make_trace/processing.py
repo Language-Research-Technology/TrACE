@@ -503,9 +503,19 @@ PAGE_OPTIONS = {
     "filter_match_color":  (r"^(.*--filter-match-color: ).*$",      "css"),
 }
 
-
-# Where the header logos are in the template
-PAGE_OPTIONS_LOGOS = r"^(.*const headerLogos = ).*$"
+# Page content from the logos, help and licence files. The logos are a
+# JavaScript list on one line. The help and licence texts are JavaScript
+# template literals, `...`, over several lines (backticks in them are
+# escaped as \`), so they are written with one pattern and read back with
+# another, which matches the whole literal
+LOGOS_PATTERN = r"^(.*const headerLogos = ).*$"
+PAGE_TEXT_PATTERNS = {
+    # option: (pattern to write it, pattern to read it back)
+    "help_file": (r"^(.*helpHTML = ).*$",
+                  r"helpHTML = (`(?:\\.|[^`\\])*`)"),
+    "licence_file": (r"^(.*licenceHTML = ).*$",
+                     r"licenceHTML = (`(?:\\.|[^`\\])*`)"),
+}
 
 
 def render_template(template_str, 
@@ -543,8 +553,9 @@ def render_template(template_str,
         header_logos: list of logos for the header, as produced by 
             `read_logos()`, or None
         kept_texts: help and licence texts to keep from an existing page,
-            as produced by `read_page_content()`; used if the help or
-            licence file is not given or not found
+            under the name of the option they belong to ("help_file",
+            "licence_file"), as produced by `read_page_content()`; used if
+            the help or licence file is not given or not found
 
     Returns:
         Nothing
@@ -565,15 +576,15 @@ def render_template(template_str,
         out = insert_template_option(pattern, f'{value};', out)
 
     # Header logos
-    out = insert_template_option(PAGE_OPTIONS_LOGOS,
+    out = insert_template_option(LOGOS_PATTERN,
                                  f'{js_value(header_logos)};',
                                  out)
 
     # Help and licence texts: from the Markdown files, or kept from an
     # existing page
-    for option, md_file, pattern in [
-            ("help_file", help_file, '^(.*helpHTML = ).*$'),
-            ("licence_file", licence_file, '^(.*licenceHTML = ).*$')]:
+    for option, md_file in [("help_file", help_file),
+                            ("licence_file", licence_file)]:
+        pattern = PAGE_TEXT_PATTERNS[option][0]
         if md_file and Path(md_file).is_file():
             out = insert_template_md(md_file, pattern, out)
         elif kept_texts and option in kept_texts:
@@ -583,21 +594,41 @@ def render_template(template_str,
     with open(Path(output_file), "w", newline="", encoding="utf-8") as f:
         f.write(add_fingerprint(out))
 
+# ======================== Reading an existing page ===========================
+
+def read_page_text(html_file):
+    """The text of an existing TrACE page, or None if it can't be read"""
+    try:
+        with open(Path(html_file), "r", newline="", encoding="utf-8") as f:
+            return f.read()
+    except (OSError, UnicodeDecodeError):
+        return None
+
+
+def line_value(text, pattern):
+    """
+    The value written on the template line that the pattern matches: the
+    rest of the line after the pattern's group, without the closing ";"
+
+    Returns:
+        str, or None if no line matches
+    """
+    match = re.search(pattern, text, flags=re.MULTILINE)
+    if match is None:
+        return None
+    return text[match.end(1):match.end()].strip().removesuffix(";").strip()
+
+
 def normalize_color(color):
     """
     Write a hex color in one way, so that colors can be compared
 
     E.g. "#F00", "#f00" and "#FF0000" all become "#ff0000".
 
-    Args:
-        color: a color as a string
-
     Returns:
         str: the color as "#rrggbb" in lower case, or None if it's not a hex
         color (e.g. a color name like "red")
     """
-    if not isinstance(color, str):
-        return None
     color = color.strip().lower()
     if re.fullmatch(r"#[0-9a-f]{3}", color):
         return "#" + "".join(c * 2 for c in color[1:])
@@ -606,36 +637,31 @@ def normalize_color(color):
     return None
 
 
-def read_page_values(html_file):
+def read_page_options(html_file):
     """
-    Read the page options from an existing TrACE page, and note those that
-    are in the page but can't be read
+    Read the page options (title, colors, ...) from an existing TrACE page
 
-    Colors are normalized (see `normalize_color()`).
+    Options that can't be found are left out. So are those that can't be
+    read (e.g. after a hand edit which broke the line, or a color written
+    as a name), with a warning. Colors are normalized (see
+    `normalize_color()`).
 
     Args:
         html_file: path to the TrACE page
 
     Returns:
-        tuple: dict of the options that could be read (option name ->
-        value), and list of the options that are in the page but couldn't
-        be read (e.g. after a hand edit which broke the line, or a color
-        written as a name); both empty if the page doesn't exist
+        dict: option name -> value; empty if the page doesn't exist
     """
-    try:
-        with open(Path(html_file), encoding="utf-8") as f:
-            text = f.read()
-    except (OSError, UnicodeDecodeError):
-        return {}, []
+    text = read_page_text(html_file)
+    if text is None:
+        return {}
 
-    options, unreadable = {}, []
+    options = {}
     for option, (pattern, value_format) in PAGE_OPTIONS.items():
-        match = re.search(pattern, text, flags=re.MULTILINE)
-        if match is None:
+        raw = line_value(text, pattern)
+        if raw is None:
             continue
 
-        # The value is the rest of the line, ending with ";"
-        raw = text[match.end(1):match.end()].strip().removesuffix(";").strip()
         if value_format == "js":
             try:
                 value = json.loads(raw)
@@ -649,35 +675,10 @@ def read_page_values(html_file):
         if value is None:
             logger.warning(f"Could not read the {option} from {html_file}: "
                            f"{raw}")
-            unreadable.append(option)
         else:
             options[option] = value
 
-    return options, unreadable
-
-
-def read_page_options(html_file):
-    """
-    Read the page options (title, colors, ...) from an existing TrACE page
-
-    Options that can't be found or read (e.g. after a hand edit which broke
-    the line, or a color written as a name) are left out, with a warning for
-    the latter. Colors are normalized (see `normalize_color()`).
-
-    Args:
-        html_file: path to the TrACE page
-
-    Returns:
-        dict: option name -> value; empty if the page doesn't exist
-    """
-    return read_page_values(html_file)[0]
-
-# Help and licence texts in a generated page: multi-line JavaScript template
-# literals, `...`, in which backticks are escaped as \`
-PAGE_TEXT_PATTERNS = {
-    "help_file": r"helpHTML = (`(?:\\.|[^`\\])*`)",
-    "licence_file": r"licenceHTML = (`(?:\\.|[^`\\])*`)",
-}
+    return options
 
 
 def read_page_content(html_file):
@@ -685,33 +686,30 @@ def read_page_content(html_file):
     Read the help text, licence text and logos of an existing TrACE page
 
     They are kept when a page is created again without the files they came
-    from (see `do_processing()`).
+    from (see `keep_page_content()`).
 
     Args:
         html_file: path to the TrACE page
 
     Returns:
         dict with the content the page has, under the name of the option
-        it comes from: "help_file" and "licence_file" (texts, as JavaScript
-        literals ready to be inserted again), and "logos_file" (list of
-        logos); empty if the page doesn't exist
+        it comes from: "help_file" and "licence_file" (the texts, as
+        JavaScript literals ready to be inserted again), and "logos_file"
+        (the list of logos); empty if the page doesn't exist
     """
-    try:
-        with open(Path(html_file), encoding="utf-8") as f:
-            text = f.read()
-    except (OSError, UnicodeDecodeError):
+    text = read_page_text(html_file)
+    if text is None:
         return {}
 
     content = {}
-    for option, pattern in PAGE_TEXT_PATTERNS.items():
-        match = re.search(pattern, text)
+    for option, (_, read_pattern) in PAGE_TEXT_PATTERNS.items():
+        match = re.search(read_pattern, text)
         # An empty literal means that the page has no such text
         if match and match.group(1) != "``":
             content[option] = match.group(1)
 
-    match = re.search(PAGE_OPTIONS_LOGOS, text, flags=re.MULTILINE)
-    if match:
-        raw = text[match.end(1):match.end()].strip().removesuffix(";").strip()
+    raw = line_value(text, LOGOS_PATTERN)
+    if raw is not None:
         try:
             logos = json.loads(raw)
         except json.JSONDecodeError:
@@ -873,9 +871,11 @@ FINGERPRINT_RE = re.compile(
 )
 
 def fingerprint(text):
+    """A short hash of the text"""
     return hashlib.sha256(text.encode("utf-8")).hexdigest()[:16]
 
 def add_fingerprint(html):
+    """Add the fingerprint of a generated page to its end"""
     return (f"{html}\n<!-- Generated by TrACE preparation; "
             f"fingerprint: {fingerprint(html)} -->\n")
 
@@ -886,10 +886,8 @@ def html_was_edited(html_file):
     Pages without a fingerprint (e.g. created by older versions) count as
     edited, to be on the safe side
     """
-    try:
-        with open(Path(html_file), "r", newline="", encoding="utf-8") as f:
-            text = f.read()
-    except (OSError, UnicodeDecodeError):
+    text = read_page_text(html_file)
+    if text is None:
         return True
 
     match = FINGERPRINT_RE.search(text)
@@ -986,6 +984,74 @@ def prepare_data(output_dir, elan_dir,
                             elan_dir=elan_dir,
                             ann_note_tier = ann_note_tier)
 
+def create_page(html_file, confirm_replace_html, title, header,
+                ann_note_tier, primary_color, ann_highlight_color,
+                filter_match_color, help_file, licence_file, logos_file):
+    """
+    Create the TrACE page, without overwriting hand edits unasked
+
+    If the page was changed since it was created, it is only replaced if
+    confirm_replace_html(path) returns True, and a backup is kept then.
+    Help, licence and logos come from the given files. If a file is not
+    given (None) or not found, the content of the existing page is kept; an
+    empty string removes the content.
+
+    Args:
+        html_file: path to the page, TrACE.html
+        confirm_replace_html: function asked before replacing an edited
+            page, or None to keep it (with a warning)
+        title ... logos_file: as for `do_processing()`
+
+    Returns:
+        tuple: what happened to the page ("created", "replaced" or "kept"),
+        and the path of the backup of a replaced edited page, or None
+    """
+    existed = html_file.exists()
+    backup = None
+
+    # Don't overwrite manual changes to the page without asking
+    if existed and html_was_edited(html_file):
+        if confirm_replace_html is None:
+            logger.warning("TrACE.html was changed since it was created, "
+                           "so it was kept. To replace it (a backup will "
+                           "be kept), use --force_html.")
+            return "kept", None
+        if not confirm_replace_html(html_file):
+            logger.info("Kept the edited TrACE.html")
+            return "kept", None
+        backup = backup_file(html_file)
+        logger.info(f"Edited page backed up to: {backup}")
+
+    page_content = read_page_content(html_file) if existed else {}
+
+    kept_texts = {}
+    for option, what, file in [("help_file", "help text", help_file),
+                               ("licence_file", "licence text",
+                                licence_file)]:
+        if keep_page_content(what, file, page_content.get(option)):
+            kept_texts[option] = page_content[option]
+
+    if keep_page_content("logos", logos_file,
+                         page_content.get("logos_file")):
+        header_logos = page_content["logos_file"]
+    else:
+        # Invalid logos are reported in the log and skipped
+        header_logos = read_logos(logos_file)
+
+    prepare_html(output_file = html_file,
+                 title = title,
+                 header = header,
+                 ann_note_tier = ann_note_tier,
+                 primary_color = primary_color,
+                 ann_highlight_color = ann_highlight_color,
+                 filter_match_color = filter_match_color,
+                 help_file = help_file,
+                 licence_file = licence_file,
+                 header_logos = header_logos,
+                 kept_texts = kept_texts)
+
+    return ("replaced" if existed else "created"), backup
+
 def do_processing(audio_dir, elan_dir, output_dir,
                   speakers_info_file, recordings_info_file,
                   title, header, ann_note_tier, primary_color,
@@ -1075,58 +1141,18 @@ def do_processing(audio_dir, elan_dir, output_dir,
         logger.info("Successfully generated data")
 
     if generate_html:
-        html_file = output_dir.joinpath("TrACE.html")
-        existed = html_file.exists()
-        replace = True
-
-        # Don't overwrite manual changes to the page without asking
-        if existed and html_was_edited(html_file):
-            replace = (confirm_replace_html is not None and
-                       confirm_replace_html(html_file))
-            if replace:
-                result["backup"] = backup_file(html_file)
-                logger.info(f"Edited page backed up to: {result['backup']}")
-            elif confirm_replace_html is None:
-                result["html"] = "kept"
-                logger.warning("TrACE.html was changed since it was created, "
-                               "so it was kept. To replace it (a backup will "
-                               "be kept), use --force_html.")
-            else:
-                result["html"] = "kept"
-                logger.info("Kept the edited TrACE.html")
-
-        if replace:
-            # Help, licence and logos come from the given files. If a file
-            # is not given (None) or not found, the content of the existing
-            # page is kept; an empty string removes the content
-            page_content = read_page_content(html_file) if existed else {}
-
-            kept_texts = {}
-            for option, what, file in [("help_file", "help text", help_file),
-                                       ("licence_file", "licence text",
-                                        licence_file)]:
-                if keep_page_content(what, file, page_content.get(option)):
-                    kept_texts[option] = page_content[option]
-
-            if keep_page_content("logos", logos_file,
-                                 page_content.get("logos_file")):
-                header_logos = page_content["logos_file"]
-            else:
-                # Invalid logos are reported in the log and skipped
-                header_logos = read_logos(logos_file)
-
-            prepare_html(output_file = html_file,
-                         title = title,
-                         header = header,
-                         ann_note_tier = ann_note_tier,
-                         primary_color = primary_color,
-                         ann_highlight_color = ann_highlight_color,
-                         filter_match_color = filter_match_color,
-                         help_file = help_file,
-                         licence_file = licence_file,
-                         header_logos = header_logos,
-                         kept_texts = kept_texts)
-            result["html"] = "replaced" if existed else "created"
+        result["html"], result["backup"] = create_page(
+            output_dir.joinpath("TrACE.html"),
+            confirm_replace_html=confirm_replace_html,
+            title=title,
+            header=header,
+            ann_note_tier=ann_note_tier,
+            primary_color=primary_color,
+            ann_highlight_color=ann_highlight_color,
+            filter_match_color=filter_match_color,
+            help_file=help_file,
+            licence_file=licence_file,
+            logos_file=logos_file)
 
     # Remember the settings of this run, to fill in the next one. Paths are
     # saved in full, so that they don't depend on the current folder
@@ -1139,9 +1165,7 @@ def do_processing(audio_dir, elan_dir, output_dir,
                 "primary_color": primary_color,
                 "ann_highlight_color": ann_highlight_color,
                 "filter_match_color": filter_match_color}
-    for option in ["audio_dir", "elan_dir", "speakers_info_file",
-                   "recordings_info_file", "help_file", "licence_file",
-                   "logos_file"]:
+    for option in FILE_OPTIONS:
         if settings[option]:
             settings[option] = str(Path(settings[option]).resolve())
     save_last_run(output_root, settings)
