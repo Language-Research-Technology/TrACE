@@ -16,6 +16,59 @@ RECORDINGS_COLUMNS = ["audio_file", "elan_file", "display_name"]
 LOGO_EXTENSIONS = {".png", ".jpg", ".jpeg", ".gif", ".svg", ".webp"}
 
 # ------------------------------------------------------------------
+# COLORS
+#
+# The window is a light grey background with white cards on it. Section
+# headings are plain bold text, and only the Run button (and problems) are
+# colored. Change the colors here
+# ------------------------------------------------------------------
+
+# Window and cards
+BG_COLOR = "#f5f6f8"
+CARD_BG = "#ffffff"
+CARD_BORDER = "#dee2e6"
+
+# Text
+TEXT_COLOR = "#343a40"
+# Secondary text: the lightest grey with enough contrast for reading
+# (4.5:1, WCAG AA) on both the white cards and the grey background
+MUTED_COLOR = "#687078"
+DISABLED_TEXT_COLOR = "#adb5bd"
+SELECTION_COLOR = "#d0ebff"
+
+# Grey buttons
+BUTTON_BG = "#f1f3f5"
+BUTTON_HOVER = "#e9ecef"
+
+# Blue: the Run button and checked checkboxes
+ACCENT_COLOR = "#228be6"
+ACCENT_HOVER = "#1c7ed6"
+ACCENT_PRESSED = "#1971c2"
+ACCENT_TEXT = "white"
+ACCENT_DISABLED = "#ced4da"
+ACCENT_DISABLED_TEXT = "#f8f9fa"
+CHECKBOX_BORDER = "#adb5bd"
+CHECKBOX_TICK = "white"
+
+# Problems with paths: card border and status text
+WARNING_BORDER = "#f59f00"
+WARNING_TEXT = "#e67700"
+ERROR_BORDER = "#e03131"
+ERROR_TEXT = "#c92a2a"
+
+# Folder and file icons: main color and the folded corner of files, for
+# chosen and empty paths
+ICON_COLOR = "#a5b8cc"
+ICON_FOLD = "#d2dce6"
+ICON_EMPTY = "#dee2e6"
+ICON_EMPTY_FOLD = "#eef0f2"
+ICON_TEXT = "white"
+
+# Tooltips
+TOOLTIP_BG = "#343a40"
+TOOLTIP_TEXT = "white"
+
+# ------------------------------------------------------------------
 # PATH CHECKS
 #
 # Each check returns a (status, info) tuple, where status is one of
@@ -256,7 +309,7 @@ def run_gui():
 
         def __init__(self, widget,
                     *,
-                    bg='#343a40',
+                    bg=TOOLTIP_BG,
                     pad=(9, 6, 9, 6),
                     text='widget info',
                     waittime=400,
@@ -356,7 +409,7 @@ def run_gui():
                             text=self.text,
                             justify=tk.LEFT,
                             background=bg,
-                            foreground='white',
+                            foreground=TOOLTIP_TEXT,
                             relief=tk.SOLID,
                             borderwidth=0,
                             wraplength=self.wraplength)
@@ -409,144 +462,132 @@ def run_gui():
     style = ttk.Style()
     style.theme_use('clam') 
 
-    # The window is a light grey background with white cards on it. Section
-    # headings are plain bold text, and only the Run button is colored
-    bg_color = "#f5f6f8"
-    card_bg = "#ffffff"
-    card_border = "#dee2e6"
-    button_bg = "#f1f3f5"
-    button_hover = "#e9ecef"
-    text_color = "#343a40"
-    # Secondary text: the lightest grey with enough contrast for reading
-    # (4.5:1, WCAG AA) on both the white cards and the grey background
-    muted_color = "#687078"
-    accent_color = "#228be6"
     font_family = default_font.cget("family")
 
-    root.configure(bg=bg_color)
-    style.configure(".", background=bg_color, foreground=text_color)
+    root.configure(bg=BG_COLOR)
+    style.configure(".", background=BG_COLOR, foreground=TEXT_COLOR)
 
     style.configure("Title.TLabel", font=(font_family, 16, "bold"))
     style.configure("Section.TLabel", font=(font_family, 11, "bold"))
-    style.configure("Muted.TLabel", foreground=muted_color)
+    style.configure("Muted.TLabel", foreground=MUTED_COLOR)
 
-    style.configure("Card.TFrame", background=card_bg)
-    style.configure("Card.TLabel", background=card_bg,
-                    foreground=muted_color)
-    style.configure("CardText.TLabel", background=card_bg)
+    style.configure("Card.TFrame", background=CARD_BG)
+    style.configure("Card.TLabel", background=CARD_BG,
+                    foreground=MUTED_COLOR)
+    style.configure("CardText.TLabel", background=CARD_BG)
     # Small grey uppercase captions, e.g. "SAVE TO"
-    style.configure("Caption.TLabel", background=card_bg,
-                    foreground=muted_color, font=(font_family, 8, "bold"))
-    style.configure("CardTitle.TLabel", background=card_bg,
+    style.configure("Caption.TLabel", background=CARD_BG,
+                    foreground=MUTED_COLOR, font=(font_family, 8, "bold"))
+    style.configure("CardTitle.TLabel", background=CARD_BG,
                     font=(font_family, 10, "bold"))
 
     # Flat grey buttons inside cards
     style.configure(
         "Card.TButton",
-        background=button_bg,
-        bordercolor=card_border,
-        lightcolor=button_bg,
-        darkcolor=button_bg,
+        background=BUTTON_BG,
+        bordercolor=CARD_BORDER,
+        lightcolor=BUTTON_BG,
+        darkcolor=BUTTON_BG,
         padding=(px(10), px(3)),
         focusthickness=0,
-        focuscolor=button_bg
+        focuscolor=BUTTON_BG
     )
     # Disabled buttons keep their shape, with lighter text and no hover
     style.map(
         "Card.TButton",
-        foreground=[("disabled", "#adb5bd")],
-        background=[("disabled", button_bg), ("active", button_hover)],
-        lightcolor=[("disabled", button_bg), ("active", button_hover)],
-        darkcolor=[("disabled", button_bg), ("active", button_hover)]
+        foreground=[("disabled", DISABLED_TEXT_COLOR)],
+        background=[("disabled", BUTTON_BG), ("active", BUTTON_HOVER)],
+        lightcolor=[("disabled", BUTTON_BG), ("active", BUTTON_HOVER)],
+        darkcolor=[("disabled", BUTTON_BG), ("active", BUTTON_HOVER)]
     )
 
     # Borderless button, e.g. for removing a chosen path
     style.configure(
         "Ghost.TButton",
-        background=card_bg,
-        foreground=muted_color,
-        bordercolor=card_bg,
-        lightcolor=card_bg,
-        darkcolor=card_bg,
+        background=CARD_BG,
+        foreground=MUTED_COLOR,
+        bordercolor=CARD_BG,
+        lightcolor=CARD_BG,
+        darkcolor=CARD_BG,
         padding=(px(6), px(3)),
         focusthickness=0,
-        focuscolor=card_bg
+        focuscolor=CARD_BG
     )
     style.map(
         "Ghost.TButton",
-        background=[("active", button_hover)],
-        bordercolor=[("active", button_hover)],
-        lightcolor=[("active", button_hover)],
-        darkcolor=[("active", button_hover)]
+        background=[("active", BUTTON_HOVER)],
+        bordercolor=[("active", BUTTON_HOVER)],
+        lightcolor=[("active", BUTTON_HOVER)],
+        darkcolor=[("active", BUTTON_HOVER)]
     )
 
     # Flat checkboxes: a grey outline, or blue with a white tick when checked
     style.configure(
         "Card.TCheckbutton",
-        background=card_bg,
-        focuscolor=card_bg,
-        indicatorbackground=card_bg,
-        indicatorforeground="white",
-        upperbordercolor="#adb5bd",
-        lowerbordercolor="#adb5bd",
+        background=CARD_BG,
+        focuscolor=CARD_BG,
+        indicatorbackground=CARD_BG,
+        indicatorforeground=CHECKBOX_TICK,
+        upperbordercolor=CHECKBOX_BORDER,
+        lowerbordercolor=CHECKBOX_BORDER,
         indicatormargin=(0, 0, px(8), 0),
         padding=(0, px(2))
     )
     style.map(
         "Card.TCheckbutton",
-        background=[("active", card_bg)],
-        indicatorbackground=[("selected", accent_color)],
-        upperbordercolor=[("selected", accent_color), 
-                          ("active", accent_color)],
-        lowerbordercolor=[("selected", accent_color),
-                          ("active", accent_color)]
+        background=[("active", CARD_BG)],
+        indicatorbackground=[("selected", ACCENT_COLOR)],
+        upperbordercolor=[("selected", ACCENT_COLOR), 
+                          ("active", ACCENT_COLOR)],
+        lowerbordercolor=[("selected", ACCENT_COLOR),
+                          ("active", ACCENT_COLOR)]
     )
 
     style.configure(
         "TEntry",
-        fieldbackground=card_bg,
-        bordercolor=card_border,
-        lightcolor=card_bg,
-        darkcolor=card_bg,
+        fieldbackground=CARD_BG,
+        bordercolor=CARD_BORDER,
+        lightcolor=CARD_BG,
+        darkcolor=CARD_BG,
         padding=(px(6), px(4)),
-        selectbackground="#d0ebff",
-        selectforeground=text_color
+        selectbackground=SELECTION_COLOR,
+        selectforeground=TEXT_COLOR
     )
     style.map(
         "TEntry",
-        bordercolor=[("focus", accent_color)],
-        lightcolor=[("focus", accent_color)]
+        bordercolor=[("focus", ACCENT_COLOR)],
+        lightcolor=[("focus", ACCENT_COLOR)]
     ) 
 
-    style.configure("TSeparator", background=card_border)
+    style.configure("TSeparator", background=CARD_BORDER)
 
     def make_card(parent, padding=12):
         """A white frame with a thin border"""
-        return tk.Frame(parent, bg=card_bg, highlightthickness=1,
-                        highlightbackground=card_border,
-                        highlightcolor=card_border,
+        return tk.Frame(parent, bg=CARD_BG, highlightthickness=1,
+                        highlightbackground=CARD_BORDER,
+                        highlightcolor=CARD_BORDER,
                         padx=px(padding), pady=px(padding))
 
     # Blue button for the main action
     style.configure(
         "Accent.TButton",
-        background=accent_color,
-        foreground="white",
-        bordercolor=accent_color,
-        lightcolor=accent_color,
-        darkcolor=accent_color,
+        background=ACCENT_COLOR,
+        foreground=ACCENT_TEXT,
+        bordercolor=ACCENT_COLOR,
+        lightcolor=ACCENT_COLOR,
+        darkcolor=ACCENT_COLOR,
         padding=(px(18), px(5)),
         focusthickness=0,
-        focuscolor=accent_color
+        focuscolor=ACCENT_COLOR
     )
     style.map(
         "Accent.TButton",
-        background=[("disabled", "#ced4da"), ("pressed", "#1971c2"),
-                    ("active", "#1c7ed6")],
-        foreground=[("disabled", "#f8f9fa")],
-        bordercolor=[("disabled", "#ced4da")],
-        lightcolor=[("disabled", "#ced4da"), ("active", "#1c7ed6")],
-        darkcolor=[("disabled", "#ced4da"), ("active", "#1c7ed6")]
+        background=[("disabled", ACCENT_DISABLED), ("pressed", ACCENT_PRESSED),
+                    ("active", ACCENT_HOVER)],
+        foreground=[("disabled", ACCENT_DISABLED_TEXT)],
+        bordercolor=[("disabled", ACCENT_DISABLED)],
+        lightcolor=[("disabled", ACCENT_DISABLED), ("active", ACCENT_HOVER)],
+        darkcolor=[("disabled", ACCENT_DISABLED), ("active", ACCENT_HOVER)]
     )
 
     # Header
@@ -572,7 +613,7 @@ def run_gui():
     ttk.Label(
         tip_frame,
         text="ⓘ",
-        foreground=accent_color
+        foreground=ACCENT_COLOR
     ).grid(row=0, column=0, padx=(0, px(6)))
     ttk.Label(
         tip_frame,
@@ -589,7 +630,7 @@ def run_gui():
     body = ttk.Frame(root)
     body.pack(fill="both", expand=True)
 
-    body_canvas = tk.Canvas(body, bg=bg_color, highlightthickness=0,
+    body_canvas = tk.Canvas(body, bg=BG_COLOR, highlightthickness=0,
                             borderwidth=0)
     body_canvas.grid(row=0, column=0, sticky="nsew")
     body_scrollbar = ttk.Scrollbar(body, orient="vertical",
@@ -691,14 +732,14 @@ def run_gui():
 
     # (card border color, status icon, status text color)
     status_styles = {
-        "ok": (card_border, "✓", muted_color),
-        "warn": ("#f59f00", "!", "#e67700"),
-        "error": ("#e03131", "✗", "#c92a2a"),
-        "empty": (card_border, "", muted_color),
+        "ok": (CARD_BORDER, "✓", MUTED_COLOR),
+        "warn": (WARNING_BORDER, "!", WARNING_TEXT),
+        "error": (ERROR_BORDER, "✗", ERROR_TEXT),
+        "empty": (CARD_BORDER, "", MUTED_COLOR),
     }
     # (main color, lighter color for the folded corner of files)
-    icon_colors = {"set": ("#a5b8cc", "#d2dce6"),
-                   "empty": ("#dee2e6", "#eef0f2")}
+    icon_colors = {"set": (ICON_COLOR, ICON_FOLD),
+                   "empty": (ICON_EMPTY, ICON_EMPTY_FOLD)}
 
     icon_font = tkFont.Font(family=font_family, size=-px(8), weight="bold")
 
@@ -727,7 +768,7 @@ def run_gui():
             if not isinstance(patterns, str):
                 patterns = patterns[0]
             ext = patterns.lstrip("*.").upper()
-            canvas.create_text(px(16), px(19), text=ext, fill="white",
+            canvas.create_text(px(16), px(19), text=ext, fill=ICON_TEXT,
                                font=icon_font)
 
     def check_path(var_name, value):
@@ -856,7 +897,7 @@ def run_gui():
             command = lambda v=var, t=filetypes: browse_file(v, t)
 
         widget = {"kind": kind, "label": label_text, "filetypes": filetypes,
-                  "required": required, "path_color": muted_color}
+                  "required": required, "path_color": MUTED_COLOR}
         path_widgets[var_name] = widget
         return var, command, widget
 
@@ -887,7 +928,7 @@ def run_gui():
         widget["frame"] = frame
 
         widget["icon"] = tk.Canvas(frame, width=px(32), height=px(32),
-                                   bg=card_bg, highlightthickness=0)
+                                   bg=CARD_BG, highlightthickness=0)
         widget["icon"].grid(row=0, column=0, rowspan=2, padx=(0, px(12)))
         widget["icon_size"] = 32
 
@@ -921,7 +962,7 @@ def run_gui():
         # A smaller icon, centered in a column as wide as the big icons
         # (plus spacing), so that the names line up with the card titles above
         widget["icon"] = tk.Canvas(frame, width=px(20), height=px(20),
-                                   bg=card_bg, highlightthickness=0)
+                                   bg=CARD_BG, highlightthickness=0)
         widget["icon"].grid(row=0, column=0, padx=(0, px(12)))
         widget["icon_size"] = 20
         frame.columnconfigure(0, minsize=px(32 + 12))
@@ -1021,7 +1062,7 @@ def run_gui():
                  "Colors of the TrACE page. Hover over a color for details, "
                  "and click it to change it.")
 
-    swatches_frame = tk.Frame(options_card, bg=card_bg)
+    swatches_frame = tk.Frame(options_card, bg=CARD_BG)
     swatches_frame.grid(row=1, column=4, sticky="w")
 
     for i, var_name in enumerate(color_vars):
@@ -1033,7 +1074,7 @@ def run_gui():
             bg=color_var.get(),
             width=3,
             highlightthickness=1,
-            highlightbackground=card_border,
+            highlightbackground=CARD_BORDER,
             cursor="hand2"
         )
         swatch.grid(row=0, column=i, padx=(0, px(6)))
@@ -1077,11 +1118,11 @@ def run_gui():
 
     # A white bar with a thin line above it; the right edge lines up with
     # the cards
-    footer = tk.Frame(root, bg=card_bg)
+    footer = tk.Frame(root, bg=CARD_BG)
     # Packed before the body, so that the body shrinks first when the
     # window gets smaller
     footer.pack(fill="x", side="bottom", before=body)
-    tk.Frame(footer, height=1, bg=card_border).pack(fill="x")
+    tk.Frame(footer, height=1, bg=CARD_BORDER).pack(fill="x")
 
     button_frame = ttk.Frame(footer, style="Card.TFrame",
                              padding=(px(20), px(12), px(20), px(12)))
@@ -1090,12 +1131,12 @@ def run_gui():
     # Output folder
     var, command, widget = add_path_var("output_dir", "Output folder", None,
                                         True, "bar")
-    widget["path_color"] = text_color
+    widget["path_color"] = TEXT_COLOR
 
     # A small caption above the path, and everything else on the line of
     # the path: folder icon, path, Change button, hint and Run button
     widget["icon"] = tk.Canvas(button_frame, width=px(20), height=px(20),
-                               bg=card_bg, highlightthickness=0)
+                               bg=CARD_BG, highlightthickness=0)
     widget["icon"].grid(row=1, column=0, padx=(0, px(8)))
     widget["icon_size"] = 20
 
@@ -1129,7 +1170,7 @@ def run_gui():
         gui_vars[var_name] = tk.BooleanVar(value=True)
 
     def open_output_options():
-        dialog = tk.Toplevel(root, bg=card_bg, padx=px(20), pady=px(16))
+        dialog = tk.Toplevel(root, bg=CARD_BG, padx=px(20), pady=px(16))
         dialog.title("Output options")
         dialog.transient(root)
         dialog.resizable(False, False)
