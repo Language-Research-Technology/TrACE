@@ -1206,7 +1206,7 @@ def run_gui():
     # One card with a grid of fields, two per row, ending with the colors:
     #
     #   Browser tab title [      ] ↶    Page header [      ] ↶
-    #   Notes tier in ELAN [     ] ↶    Colors      [■]↶ [■]↶ [■]↶ Reset
+    #   Notes tier in ELAN [     ] ↶    Colors      [■]↶ [■]↶ [■]↶ Use defaults
     #
     # ↶ only appears when a field differs from the existing page, and
     # restores the page's value (see update_change_markers()).
@@ -1328,7 +1328,7 @@ def run_gui():
 
     reset_button = ttk.Button(
         swatches_frame,
-        text="Reset",
+        text="Use defaults",
         style="Card.TButton",
         command=reset_colors,
     )
