@@ -4,7 +4,9 @@ import textwrap
 from pathlib import Path
 
 from constants import DEFAULTS, HELP_STRINGS
-from processing import do_processing, read_page_content
+from processing import (do_processing, read_page_content,
+                        read_previous_settings, LAST_RUN_FILE,
+                        SAVED_OPTIONS)
 
 
 # Wrap the help text and print defalut values in the CLI help message
@@ -39,7 +41,13 @@ parser = argparse.ArgumentParser(
         "A script to prepare audio data with transcripts for viewing in an " +
         "HTML interface. "+
         "To launch a graphical user interface, run the script " +
-        "without any parameters."
+        "without any parameters." +
+        "\n\n" +
+        "Page options (title, header, notes tier and colors) that are " +
+        "not given are taken from the existing TrACE page. Files that are " +
+        "not given are taken from the last successful run with the same " +
+        "output folder (saved in " + LAST_RUN_FILE + ", next to the TrACE " +
+        "folder)."
     ),
     add_help=True,
     formatter_class=CustomWidthFormatter
@@ -58,7 +66,7 @@ data_group.add_argument("-a", "--audio_dir",
                         type=Path,
                         metavar="",
                         help=(HELP_STRINGS["audio_dir"] + 
-                              "\n  Default: None")
+                              "\n  Default: as in the last run")
                         )
 
 data_group.add_argument("-e", "--elan_dir",
@@ -66,7 +74,7 @@ data_group.add_argument("-e", "--elan_dir",
                         type=Path,
                         metavar="",
                         help=(HELP_STRINGS["elan_dir"] + 
-                              "\n  Default: None")
+                              "\n  Default: as in the last run")
                         )
 
 data_group.add_argument("-s", "--speaker_info",
@@ -74,7 +82,7 @@ data_group.add_argument("-s", "--speaker_info",
                         type=Path,
                         metavar="",
                         help=(HELP_STRINGS["speakers_info_file"] + 
-                              "\n  Default: None")
+                              "\n  Default: as in the last run")
                         )
 
 data_group.add_argument("-r", "--recordings_info",
@@ -82,7 +90,7 @@ data_group.add_argument("-r", "--recordings_info",
                         type=Path,
                         metavar="",
                         help=(HELP_STRINGS["recordings_info_file"] + 
-                              "\n  Default: None")
+                              "\n  Default: as in the last run")
                         )
 
 data_group.add_argument("-o", "--output_dir",
@@ -103,54 +111,54 @@ template_group.add_argument("--title",
                             dest="title",
                             type=str,
                             metavar="",
-                            default=DEFAULTS["title"],
+                            default=None,
                             help=(HELP_STRINGS["title"] + 
-                                  f"\n  Default: {DEFAULTS['title']}")
+                                  f"\n  Default: as in the existing page, or {DEFAULTS['title']}")
                             )
 
 template_group.add_argument("--header",
                             dest="header",
                             type=str,
                             metavar="",
-                            default=DEFAULTS["header"],
+                            default=None,
                             help=(HELP_STRINGS["header"] + 
-                                  f"\n  Default: {DEFAULTS['header']}")
+                                  f"\n  Default: as in the existing page, or {DEFAULTS['header']}")
                             )
 
 template_group.add_argument("--ann_note_tier",
                             dest="ann_note_tier",
                             type=str,
                             metavar="",
-                            default=DEFAULTS["ann_note_tier"],
+                            default=None,
                             help=(HELP_STRINGS["ann_note_tier"] + 
-                                  f"\n  Default: {DEFAULTS['ann_note_tier']}")
+                                  f"\n  Default: as in the existing page, or {DEFAULTS['ann_note_tier']}")
                             )
 
 template_group.add_argument("--primary_color",
                             dest="primary_color",
                             type=str,
                             metavar="",
-                            default=DEFAULTS["primary_color"],
+                            default=None,
                             help=(HELP_STRINGS["primary_color"] + 
-                                  f"\n  Default: {DEFAULTS['primary_color']}")
+                                  f"\n  Default: as in the existing page, or {DEFAULTS['primary_color']}")
                             )
 
 template_group.add_argument("--ann_highlight_color",
                             dest="ann_highlight_color",
                             type=str,
                             metavar="",
-                            default=DEFAULTS["ann_highlight_color"],
+                            default=None,
                             help=(HELP_STRINGS["ann_highlight_color"] + 
-                                f"\n  Default: {DEFAULTS['ann_highlight_color']}")
+                                f"\n  Default: as in the existing page, or {DEFAULTS['ann_highlight_color']}")
                             )
 
 template_group.add_argument("--filter_match_color",
                             dest="filter_match_color",
                             type=str,
                             metavar="",
-                            default=DEFAULTS["filter_match_color"],
+                            default=None,
                             help=(HELP_STRINGS["filter_match_color"] + 
-                                f"\n  Default: {DEFAULTS['filter_match_color']}\n")
+                                f"\n  Default: as in the existing page, or {DEFAULTS['filter_match_color']}\n")
                             )
 
 # Help, licence and logos are kept from an existing page, unless a file is
@@ -240,6 +248,22 @@ def run_cli():
     args_dict = vars(args)
     args_dict["report_callback"] = report
 
+    # Options that are not given: page options from the existing page, and
+    # files from the last successful run (see read_previous_settings()), or
+    # else the defaults
+    previous, origins = read_previous_settings(args_dict["output_dir"])
+
+    reused = {}
+    for option in SAVED_OPTIONS:
+        if args_dict[option] is None:
+            if previous.get(option) is not None:
+                args_dict[option] = previous[option]
+                reused.setdefault(origins[option], []).append(option)
+            elif option in DEFAULTS:
+                args_dict[option] = DEFAULTS[option]
+    for origin, options in reused.items():
+        print(f"Using settings from {origin}: {', '.join(options)}")
+
     # Without --force_html, nobody is asked: an edited page is kept, with a
     # warning about the option
     if args_dict.pop("force_html"):
@@ -257,5 +281,4 @@ def run_cli():
                 print(f"{what}: kept from the existing page (use "
                       f"--{option} to replace it, or --{option} \"\" to "
                       "remove it)")
-    print(args_dict)
     do_processing(**args_dict)

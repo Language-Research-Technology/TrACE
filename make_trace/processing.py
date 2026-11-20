@@ -583,26 +583,52 @@ def render_template(template_str,
     with open(Path(output_file), "w", newline="", encoding="utf-8") as f:
         f.write(add_fingerprint(out))
 
-def read_page_options(html_file):
+def normalize_color(color):
     """
-    Read the page options (title, colors, ...) from an existing TrACE page
+    Write a hex color in one way, so that colors can be compared
 
-    Options that can't be found or read (e.g. after a hand edit which broke
-    the line) are left out, with a warning for the latter.
+    E.g. "#F00", "#f00" and "#FF0000" all become "#ff0000".
+
+    Args:
+        color: a color as a string
+
+    Returns:
+        str: the color as "#rrggbb" in lower case, or None if it's not a hex
+        color (e.g. a color name like "red")
+    """
+    if not isinstance(color, str):
+        return None
+    color = color.strip().lower()
+    if re.fullmatch(r"#[0-9a-f]{3}", color):
+        return "#" + "".join(c * 2 for c in color[1:])
+    if re.fullmatch(r"#[0-9a-f]{6}", color):
+        return color
+    return None
+
+
+def read_page_values(html_file):
+    """
+    Read the page options from an existing TrACE page, and note those that
+    are in the page but can't be read
+
+    Colors are normalized (see `normalize_color()`).
 
     Args:
         html_file: path to the TrACE page
 
     Returns:
-        dict: option name -> value; empty if the page doesn't exist
+        tuple: dict of the options that could be read (option name ->
+        value), and list of the options that are in the page but couldn't
+        be read (e.g. after a hand edit which broke the line, or a color
+        written as a name); both empty if the page doesn't exist
     """
     try:
         with open(Path(html_file), encoding="utf-8") as f:
             text = f.read()
     except (OSError, UnicodeDecodeError):
-        return {}
+        return {}, []
 
-    options = {}
+    options, unreadable = {}, []
     for option, (pattern, value_format) in PAGE_OPTIONS.items():
         match = re.search(pattern, text, flags=re.MULTILINE)
         if match is None:
@@ -610,19 +636,41 @@ def read_page_options(html_file):
 
         # The value is the rest of the line, ending with ";"
         raw = text[match.end(1):match.end()].strip().removesuffix(";").strip()
-        try:
-            value = json.loads(raw) if value_format == "js" else raw
-        except json.JSONDecodeError:
-            value = None
-        if (not isinstance(value, str) or (value_format == "css" and
-                not re.fullmatch(r"#[0-9a-fA-F]{6}", value))):
+        if value_format == "js":
+            try:
+                value = json.loads(raw)
+            except json.JSONDecodeError:
+                value = None
+            if not isinstance(value, str):
+                value = None
+        else:
+            value = normalize_color(raw)
+
+        if value is None:
             logger.warning(f"Could not read the {option} from {html_file}: "
                            f"{raw}")
-            continue
+            unreadable.append(option)
+        else:
+            options[option] = value
 
-        options[option] = value
+    return options, unreadable
 
-    return options
+
+def read_page_options(html_file):
+    """
+    Read the page options (title, colors, ...) from an existing TrACE page
+
+    Options that can't be found or read (e.g. after a hand edit which broke
+    the line, or a color written as a name) are left out, with a warning for
+    the latter. Colors are normalized (see `normalize_color()`).
+
+    Args:
+        html_file: path to the TrACE page
+
+    Returns:
+        dict: option name -> value; empty if the page doesn't exist
+    """
+    return read_page_values(html_file)[0]
 
 # Help and licence texts in a generated page: multi-line JavaScript template
 # literals, `...`, in which backticks are escaped as \`
@@ -701,6 +749,120 @@ def keep_page_content(what, file, page_content):
         return True
 
     return False
+
+# ======================== Settings of the last run ============================
+
+# The settings of the last successful run are saved next to the TrACE folder,
+# never inside it (that folder is published, and the settings contain paths
+# on this computer), to fill in the next run
+LAST_RUN_FILE = "TrACE_last_successful_run.json"
+
+# Options saved, in two sections: the files, and a backup of the page
+# options (which are read from the page itself, when there is one). The
+# output folder is where the file is, and the processing steps are chosen
+# for each run
+FILE_OPTIONS = ["audio_dir", "elan_dir", "speakers_info_file",
+                "recordings_info_file", "help_file", "licence_file",
+                "logos_file"]
+SAVED_OPTIONS = FILE_OPTIONS + list(PAGE_OPTIONS)
+
+
+def read_last_run(output_dir):
+    """
+    Read the settings of the last successful run in an output folder
+
+    Args:
+        output_dir: the output folder (which contains the TrACE folder)
+
+    Returns:
+        dict: option name -> value (a string, or None); empty if there are
+        no saved settings, or they can't be read (with a warning)
+    """
+    path = Path(output_dir).joinpath(LAST_RUN_FILE)
+    if not path.is_file():
+        return {}
+
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, UnicodeDecodeError, json.JSONDecodeError) as e:
+        logger.warning(f"Could not read {path}, so it is not used: {e}")
+        return {}
+
+    # The two sections are combined into one dict
+    settings = {}
+    for section in ["files", "page_backup"]:
+        values = data.get(section) if isinstance(data, dict) else None
+        if isinstance(values, dict):
+            settings.update(values)
+
+    return {option: value for option, value in settings.items()
+            if option in SAVED_OPTIONS and (value is None or
+                                            isinstance(value, str))}
+
+
+def save_last_run(output_dir, settings):
+    """
+    Save the settings of a successful run in the output folder
+
+    Args:
+        output_dir: the output folder (which contains the TrACE folder)
+        settings: dict with the values of SAVED_OPTIONS
+    """
+    path = Path(output_dir).joinpath(LAST_RUN_FILE)
+    data = {
+        "about": ("Settings of the last successful run of TrACE "
+                  "preparation, used to fill in the next run. This file is "
+                  "not part of the TrACE folder: it contains paths on this "
+                  "computer, so don't publish it."),
+        "files": {option: settings.get(option) for option in FILE_OPTIONS},
+        "page_backup": {
+            "about": ("A copy of the page's title, header, notes tier and "
+                      "colors. They are only used when there is no TrACE "
+                      "page yet; otherwise they are read from the page."),
+            **{option: settings.get(option) for option in PAGE_OPTIONS},
+        },
+    }
+    try:
+        path.write_text(json.dumps(data, indent=2, ensure_ascii=False) + "\n",
+                        encoding="utf-8")
+    except OSError as e:
+        logger.warning(f"Could not save the settings to {path}: {e}")
+
+
+def read_previous_settings(output_dir, final_dir="TrACE"):
+    """
+    Settings to start a new run from
+
+    The page options (title, colors, ...) come from the existing TrACE page,
+    so that they show what the page has now, even if someone else updated
+    it. The locations of the files come from the settings of the last
+    successful run in the output folder, since they can't be read from the
+    page; so do the page options if there is no page yet (or a value can't
+    be read from it).
+
+    Args:
+        output_dir: the output folder (which contains the TrACE folder)
+        final_dir: name of the TrACE folder
+
+    Returns:
+        tuple: the settings (dict: option name -> value), and where each
+        comes from (dict: option name -> "the existing page" or
+        LAST_RUN_FILE)
+    """
+    last_run = read_last_run(output_dir)
+    page_options = read_page_options(
+        Path(output_dir).joinpath(final_dir, "TrACE.html"))
+
+    settings, origins = {}, {}
+    for option in SAVED_OPTIONS:
+        if option in page_options:
+            settings[option] = page_options[option]
+            origins[option] = "the existing page"
+        elif option in last_run:
+            settings[option] = last_run[option]
+            origins[option] = LAST_RUN_FILE
+
+    return settings, origins
 
 # ======================== Edited page detection ===============================
 
@@ -841,7 +1003,10 @@ def do_processing(audio_dir, elan_dir, output_dir,
     Returns:
         dict: output_dir; html: "created", "replaced", "kept" or
         "skipped"; backup: path of the backup of the replaced page, or
-        None. None if processing stopped because of a problem (invalid
+        None. The settings of a successful run are saved in
+        LAST_RUN_FILE, next to the TrACE folder.
+
+        None if processing stopped because of a problem (invalid
         input paths, or audio files that couldn't be copied); the problem
         is passed to report_callback().
     """
@@ -858,7 +1023,8 @@ def do_processing(audio_dir, elan_dir, output_dir,
         report_callback(e)
         return
 
-    output_dir = Path(output_dir).joinpath(final_dir)
+    output_root = Path(output_dir)
+    output_dir = output_root.joinpath(final_dir)
 
     # Create output dir if not exists
     if not output_dir.exists():
@@ -961,5 +1127,23 @@ def do_processing(audio_dir, elan_dir, output_dir,
                          header_logos = header_logos,
                          kept_texts = kept_texts)
             result["html"] = "replaced" if existed else "created"
+
+    # Remember the settings of this run, to fill in the next one. Paths are
+    # saved in full, so that they don't depend on the current folder
+    settings = {"audio_dir": audio_dir, "elan_dir": elan_dir,
+                "speakers_info_file": speakers_info_file,
+                "recordings_info_file": recordings_info_file,
+                "help_file": help_file, "licence_file": licence_file,
+                "logos_file": logos_file, "title": title, "header": header,
+                "ann_note_tier": ann_note_tier,
+                "primary_color": primary_color,
+                "ann_highlight_color": ann_highlight_color,
+                "filter_match_color": filter_match_color}
+    for option in ["audio_dir", "elan_dir", "speakers_info_file",
+                   "recordings_info_file", "help_file", "licence_file",
+                   "logos_file"]:
+        if settings[option]:
+            settings[option] = str(Path(settings[option]).resolve())
+    save_last_run(output_root, settings)
 
     return result

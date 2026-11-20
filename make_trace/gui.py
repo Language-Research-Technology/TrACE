@@ -17,7 +17,9 @@ import sys
 import os
 
 from constants import HELP_STRINGS, DEFAULTS
-from processing import do_processing, read_page_content
+from processing import (do_processing, read_page_content, read_page_options,
+                        read_previous_settings, normalize_color,
+                        LAST_RUN_FILE)
 from checks import (AUDIO_EXTENSIONS, check_folder, check_speakers,
                     check_recordings, check_markdown, check_logos,
                     check_output)
@@ -287,6 +289,9 @@ def run_gui():
         elif result["backup"] is not None:
             message += ("\n\nThe previous page was saved as:\n" +
                         result["backup"].name)
+        # The page now matches the fields
+        read_existing_page()
+
         messagebox.showinfo("TrACE is ready", message)
 
 
@@ -368,6 +373,9 @@ def run_gui():
             self.wraplength = wraplength or px(420)
             self.widget = widget
             self.text = text
+            # Optional: a color, shown as a small square where the text says
+            # "{color}"
+            self.color = None
             self.widget.bind("<Enter>", self.onEnter)
             self.widget.bind("<Leave>", self.onLeave)
             self.widget.bind("<ButtonPress>", self.onLeave)
@@ -394,6 +402,10 @@ def run_gui():
                 self.widget.after_cancel(id_)
 
         def show(self):
+            # Nothing to show, e.g. for a hidden ↶
+            if not self.text:
+                return
+
             def tip_pos_calculator(widget, label,
                                 *,
                                 tip_delta=(10, 5), pad=(5, 3, 5, 3)):
@@ -453,14 +465,17 @@ def run_gui():
             win = tk.Frame(self.tw,
                         background=bg,
                         borderwidth=0)
-            label = tk.Label(win,
-                            text=self.text,
-                            justify=tk.LEFT,
-                            background=bg,
-                            foreground=TOOLTIP_TEXT,
-                            relief=tk.SOLID,
-                            borderwidth=0,
-                            wraplength=self.wraplength)
+            if self.color and "{color}" in self.text:
+                label = self.text_with_color(win, bg)
+            else:
+                label = tk.Label(win,
+                                text=self.text,
+                                justify=tk.LEFT,
+                                background=bg,
+                                foreground=TOOLTIP_TEXT,
+                                relief=tk.SOLID,
+                                borderwidth=0,
+                                wraplength=self.wraplength)
 
             label.grid(padx=(pad[0], pad[2]),
                     pady=(pad[1], pad[3]),
@@ -470,6 +485,36 @@ def run_gui():
             x, y = tip_pos_calculator(widget, label)
 
             self.tw.wm_geometry("+%d+%d" % (x, y))
+
+        def text_with_color(self, parent, bg):
+            """
+            The text, line by line, with a small square in self.color where
+            it says "{color}" (a label can't show it inside its text)
+            """
+            def add_text(row, text):
+                if text:
+                    tk.Label(row, text=text, background=bg,
+                             foreground=TOOLTIP_TEXT, borderwidth=0, padx=0,
+                             pady=0).pack(side="left")
+
+            content = tk.Frame(parent, background=bg)
+            for i, line in enumerate(self.text.split("\n")):
+                row = tk.Frame(content, background=bg)
+                row.grid(row=i, column=0, sticky="w")
+
+                before, placeholder, after = line.partition("{color}")
+                add_text(row, before)
+                if placeholder:
+                    try:
+                        tk.Frame(row, background=self.color, width=px(12),
+                                 height=px(12), highlightthickness=1,
+                                 highlightbackground=TOOLTIP_TEXT
+                                 ).pack(side="left", padx=(0, px(4)))
+                    except tk.TclError:
+                        # Not a color that tkinter knows: no square
+                        pass
+                add_text(row, after)
+            return content
 
         def hide(self):
             tw = self.tw
@@ -549,6 +594,28 @@ def run_gui():
         background=[("disabled", BUTTON_BG), ("active", BUTTON_HOVER)],
         lightcolor=[("disabled", BUTTON_BG), ("active", BUTTON_HOVER)],
         darkcolor=[("disabled", BUTTON_BG), ("active", BUTTON_HOVER)]
+    )
+
+    # Borderless blue symbol button, e.g. ↶ (undo) for a changed page option
+    style.configure(
+        "Link.TButton",
+        background=CARD_BG,
+        foreground=ACCENT_COLOR,
+        bordercolor=CARD_BG,
+        lightcolor=CARD_BG,
+        darkcolor=CARD_BG,
+        font=(font_family, 12),
+        padding=(px(4), 0),
+        focusthickness=0,
+        focuscolor=CARD_BG
+    )
+    style.map(
+        "Link.TButton",
+        foreground=[("pressed", ACCENT_PRESSED), ("active", ACCENT_HOVER)],
+        background=[("active", BUTTON_BG)],
+        bordercolor=[("active", BUTTON_BG)],
+        lightcolor=[("active", BUTTON_BG)],
+        darkcolor=[("active", BUTTON_BG)]
     )
 
     # Borderless button, e.g. for removing a chosen path
@@ -842,6 +909,14 @@ def run_gui():
     # Filled in when the Run button is created at the bottom
     run_controls = {}
 
+    # The page options of the existing page (see read_existing_page()). If
+    # a field differs from them, ↶ is shown next to it
+    existing_page = {"options": {}}
+
+    # Results of the last check of the paths (see refresh_paths()), used by
+    # update_run_hint()
+    path_state = {"missing": [], "has_errors": False}
+
     def refresh_paths(*args):
         """
         Check all paths and show the results: status, path and buttons of
@@ -926,13 +1001,74 @@ def run_gui():
                 else:
                     widget["remove"].grid_remove()
 
+        path_state["missing"] = missing
+        path_state["has_errors"] = has_errors
+        update_run_hint()
+
+    def differs_from_page(option):
+        """
+        Whether a page option differs from the existing page; colors are
+        compared in any hex form (e.g. "#F00" is "#ff0000")
+        """
+        if option not in existing_page["options"]:
+            return False
+        value = gui_vars[option].get()
+        if option in dict(PAGE_COLORS):
+            value = normalize_color(value) or value
+        return value != existing_page["options"][option]
+
+    def update_change_markers(*args):
+        """
+        Show ↶ next to the page options (texts and colors) that differ from
+        the existing page, with the page's value in its tooltip
+        """
+        # Not all markers are created yet
+        if len(change_markers) < len(PAGE_TEXTS) + len(PAGE_COLORS):
+            return
+
+        color_titles = dict(PAGE_COLORS)
+        for option, _ in PAGE_TEXTS + PAGE_COLORS:
+            button, tip = change_markers[option]
+            if differs_from_page(option):
+                button.configure(text="↶")
+                button.state(["!disabled"])
+                page_value = existing_page["options"][option]
+                # The colors share one label, so say which color it is, and
+                # show it
+                if option in color_titles:
+                    tip.text = (f"Changed: the page's "
+                                f"{color_titles[option].lower()} is "
+                                f"{{color}}{page_value}.\n"
+                                "Click to restore it.")
+                    tip.color = page_value
+                else:
+                    tip.text = (f"Changed: the page has “{page_value}”.\n"
+                                "Click to restore it.")
+            else:
+                button.configure(text="")
+                button.state(["disabled"])
+                tip.text = ""
+
+    def update_run_hint(*args):
+        """
+        Show the hint next to Run, and enable Run if the paths are fine
+
+        Uses the results of the last check of the paths (see
+        refresh_paths()).
+        """
         if "button" not in run_controls:
             return
 
+        def join(names):
+            """E.g. 'audio folder, ELAN folder and speakers CSV file'"""
+            if len(names) > 1:
+                return ", ".join(names[:-1]) + " and " + names[-1]
+            return names[0]
+
+        missing = path_state["missing"]
+        has_errors = path_state["has_errors"]
         if missing:
-            if len(missing) > 1:
-                missing = [", ".join(missing[:-1]), missing[-1]]
-            hint = f"To continue, choose the {' and '.join(missing)}."
+            hint = f"To continue, choose the {join(missing)}."
         elif has_errors:
             hint = "To continue, fix the problems marked ✗."
         else:
@@ -1069,16 +1205,44 @@ def run_gui():
 
     # One card with a grid of fields, two per row, ending with the colors:
     #
-    #   Browser tab title [      ]    Page header [      ]
-    #   Notes tier in ELAN [     ]    Colors      [■] [■] [■] Reset
+    #   Browser tab title [      ] ↶    Page header [      ] ↶
+    #   Notes tier in ELAN [     ] ↶    Colors      [■]↶ [■]↶ [■]↶ Reset
     #
-    # Columns: label, field, gap, label, field. Field number i is in row
-    # i // 2, and starts in column 0 or 3
+    # ↶ only appears when a field differs from the existing page, and
+    # restores the page's value (see update_change_markers()).
+    #
+    # Columns: label, field, ↶, gap, label, field, ↶. Field number i is in
+    # row i // 2, and starts in column 0 or 4
     options_card = make_card(options_frame, padding=14)
     options_card.grid(row=0, column=0, sticky="ew", padx=px(4), pady=px(4))
     options_frame.columnconfigure(0, weight=1)
-    options_card.columnconfigure((1, 4), weight=1, uniform="fields")
-    options_card.columnconfigure(2, minsize=px(28))
+    options_card.columnconfigure((1, 5), weight=1, uniform="fields")
+    options_card.columnconfigure(3, minsize=px(20))
+
+    # Undo buttons (↶): option name -> (button, tooltip)
+    change_markers = {}
+
+    def add_change_marker(option, parent, row, column):
+        """
+        Add an undo button (↶) for a page option, hidden until the option
+        differs from the page; it restores the page's value
+
+        The button always stays in place, with the same size, and is only
+        emptied and disabled when hidden, so that nothing moves when it
+        appears.
+        """
+        button = ttk.Button(parent, text="", width=2, style="Link.TButton",
+                            command=lambda: restore_from_page([option]))
+        button.grid(row=row, column=column, sticky="w", padx=(px(2), 0))
+        button.state(["disabled"])
+        change_markers[option] = (button, Tooltip(button, text="",
+                                                  waittime=50))
+
+    def restore_from_page(options):
+        """Set the given page options back to the values of the page"""
+        for option in options:
+            if option in existing_page["options"]:
+                gui_vars[option].set(existing_page["options"][option])
 
     def option_label(text, row, column, help_text):
         """Add a label with a tooltip to the page options grid"""
@@ -1089,7 +1253,7 @@ def run_gui():
 
     def option_cell(i):
         """Row and first column of field number i in the grid"""
-        return i // 2, (i % 2) * 3
+        return i // 2, (i % 2) * 4
 
     for i, (var_name, label_text) in enumerate(PAGE_TEXTS):
         row, column = option_cell(i)
@@ -1106,6 +1270,8 @@ def run_gui():
         entry.grid(row=row, column=column + 1, sticky="ew", pady=px(4))
         # Unfocus on Enter key
         entry.bind("<Return>", unfocus_entry)
+
+        add_change_marker(var_name, options_card, row, column + 2)
 
     # COLORS: one row of clickable swatches
 
@@ -1143,7 +1309,8 @@ def run_gui():
             highlightbackground=CARD_BORDER,
             cursor="hand2"
         )
-        swatch.grid(row=0, column=i, padx=(0, px(6)))
+        swatch.grid(row=0, column=2 * i)
+        add_change_marker(var_name, swatches_frame, 0, 2 * i + 1)
         tip = Tooltip(swatch, text="", waittime=50)
 
         def update_swatch(*args, v=color_var, s=swatch, t=tip,
@@ -1165,7 +1332,7 @@ def run_gui():
         style="Card.TButton",
         command=reset_colors,
     )
-    reset_button.grid(row=0, column=3, padx=(px(4), 0))
+    reset_button.grid(row=0, column=2 * len(PAGE_COLORS), padx=(px(4), 0))
     Tooltip(reset_button, text="Go back to the default colors", waittime=50)
 
     def update_reset_button(*args):
@@ -1207,7 +1374,10 @@ def run_gui():
 
     caption = ttk.Label(button_frame, text="SAVE TO", style="Caption.TLabel")
     caption.grid(row=0, column=1, sticky="w")
-    Tooltip(caption, text=HELP_STRINGS[OUTPUT_FOLDER[0]], waittime=50)
+    # The tooltip also says where the values of the fields come from (see
+    # load_output_folder())
+    caption_tip = Tooltip(caption, text=HELP_STRINGS[OUTPUT_FOLDER[0]],
+                          waittime=50)
 
     widget["path"] = ttk.Label(button_frame, style="CardText.TLabel")
     widget["path"].grid(row=1, column=1, sticky="w")
@@ -1231,20 +1401,57 @@ def run_gui():
     )
     run_controls["button"].grid(row=1, column=6, sticky="e")
 
-    def update_kept_content(*args):
+    def load_output_folder(*args):
         """
-        Note which optional files have content in the existing page, in the
-        output folder; it's kept unless a file is chosen or ✕ is clicked
+        Fill in the fields from the previous run in the output folder, and
+        note which optional files have content in the existing page
+
+        The page options come from the existing page, and the files from
+        the settings of the last successful run (see
+        processing.read_previous_settings()). Content of the page is kept
+        unless a file is chosen or ✕ is clicked.
         """
         output_dir = gui_vars[OUTPUT_FOLDER[0]].get().strip() or "."
+        settings, origins = read_previous_settings(output_dir)
+        for option, value in settings.items():
+            if option in gui_vars and value is not None:
+                gui_vars[option].set(value)
+
         html_file = Path(output_dir).joinpath("TrACE", "TrACE.html")
         page_content = read_page_content(html_file)
         for var_name, _, _ in OPTIONAL_FILES:
-            path_widgets[var_name]["keep"] = var_name in page_content
+            # Content removed in the last run ("") stays removed
+            path_widgets[var_name]["keep"] = (var_name in page_content and
+                                              settings.get(var_name) != "")
+
+        # Mention in the tooltip of SAVE TO that the files are remembered
+        # (the page options come from the page, which needs no explanation)
+        tip = HELP_STRINGS[OUTPUT_FOLDER[0]]
+        if LAST_RUN_FILE in origins.values():
+            tip += (f"\n\nThe files are remembered from the last successful "
+                    f"run in this folder, in {LAST_RUN_FILE}, next to the "
+                    "TrACE folder (it is not part of the TrACE folder).")
+        caption_tip.text = tip
+
+        # The page options of the existing page, to show ↶ next to fields
+        # that differ from them
+        read_existing_page()
+
         refresh_paths()
 
-    gui_vars[OUTPUT_FOLDER[0]].trace_add("write", update_kept_content)
-    update_kept_content()
+    def read_existing_page():
+        """Read the page options of the existing page in the output folder"""
+        output_dir = gui_vars[OUTPUT_FOLDER[0]].get().strip() or "."
+        existing_page["options"] = read_page_options(
+            Path(output_dir).joinpath("TrACE", "TrACE.html"))
+        update_change_markers()
+
+    gui_vars[OUTPUT_FOLDER[0]].trace_add("write", load_output_folder)
+    load_output_folder()
+
+    # Changing a page option shows or hides its ↶
+    for option, _ in PAGE_TEXTS + PAGE_COLORS:
+        gui_vars[option].trace_add("write", update_change_markers)
 
     button_frame.columnconfigure(5, weight=1)
 
