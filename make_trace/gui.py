@@ -1232,17 +1232,16 @@ def run_gui():
         appears.
         """
         button = ttk.Button(parent, text="", width=2, style="Link.TButton",
-                            command=lambda: restore_from_page([option]))
+                            command=lambda: restore_from_page(option))
         button.grid(row=row, column=column, sticky="w", padx=(px(2), 0))
         button.state(["disabled"])
         change_markers[option] = (button, Tooltip(button, text="",
                                                   waittime=50))
 
-    def restore_from_page(options):
-        """Set the given page options back to the values of the page"""
-        for option in options:
-            if option in existing_page["options"]:
-                gui_vars[option].set(existing_page["options"][option])
+    def restore_from_page(option):
+        """Set a page option back to the value of the existing page (↶)"""
+        if option in existing_page["options"]:
+            gui_vars[option].set(existing_page["options"][option])
 
     def option_label(text, row, column, help_text):
         """Add a label with a tooltip to the page options grid"""
@@ -1374,8 +1373,8 @@ def run_gui():
 
     caption = ttk.Label(button_frame, text="SAVE TO", style="Caption.TLabel")
     caption.grid(row=0, column=1, sticky="w")
-    # The tooltip also says where the values of the fields come from (see
-    # load_output_folder())
+    # The tooltip also says that the files are remembered from the last
+    # run (see load_output_folder())
     caption_tip = Tooltip(caption, text=HELP_STRINGS[OUTPUT_FOLDER[0]],
                           waittime=50)
 

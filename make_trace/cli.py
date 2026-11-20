@@ -218,22 +218,22 @@ processing_group.add_argument("--no_data",
 html_group = processing_group.add_mutually_exclusive_group()
 
 html_group.add_argument("--force_html",
-                              dest="force_html",
-                              action="store_true",
-                              help=("Replace TrACE.html even if it was " +
-                                    "changed by hand since it was created " +
-                                    "(a backup copy is kept). Without this, " +
-                                    "an edited page is kept as it is.")
-                             )
+                        dest="force_html",
+                        action="store_true",
+                        help=("Replace TrACE.html even if it was changed " +
+                              "by hand since it was created (a backup copy " +
+                              "is kept). Without this, an edited page is " +
+                              "kept as it is.")
+                        )
 
 html_group.add_argument("--no_html",
-                              dest="generate_html",
-                              action="store_false",
-                              help=("Leave TrACE.html completely untouched, " +
-                                    "and only update the audio and data. " +
-                                    "(Hand edits to the page are kept " +
-                                    "anyway, unless --force_html is given.)")
-                              )
+                        dest="generate_html",
+                        action="store_false",
+                        help=("Leave TrACE.html completely untouched, and " +
+                              "only update the audio and data. (Hand edits " +
+                              "to the page are kept anyway, unless " +
+                              "--force_html is given.)")
+                        )
 
 
 def run_cli():
