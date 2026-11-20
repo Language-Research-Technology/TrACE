@@ -197,7 +197,11 @@ processing_group.add_argument("--no_data",
                               help="Do not re-create data."
                              )
 
-processing_group.add_argument("--force_html",
+# Replacing an edited page, or not touching the page at all: one or the
+# other
+html_group = processing_group.add_mutually_exclusive_group()
+
+html_group.add_argument("--force_html",
                               dest="force_html",
                               action="store_true",
                               help=("Replace TrACE.html even if it was " +
@@ -206,12 +210,13 @@ processing_group.add_argument("--force_html",
                                     "an edited page is kept as it is.")
                              )
 
-processing_group.add_argument("--no_html",
+html_group.add_argument("--no_html",
                               dest="generate_html",
-                              action="store_false", 
-                              help=("Do not re-create TrACE HTML file from " +
-                                    "scratch (e.g., if you made manual " +
-                                    "changes to it that you want to preserve.")
+                              action="store_false",
+                              help=("Leave TrACE.html completely untouched, " +
+                                    "and only update the audio and data. " +
+                                    "(Hand edits to the page are kept " +
+                                    "anyway, unless --force_html is given.)")
                               )
 
 
