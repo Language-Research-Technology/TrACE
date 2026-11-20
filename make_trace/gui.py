@@ -13,6 +13,72 @@ from checks import (AUDIO_EXTENSIONS, check_folder, check_speakers,
                     check_output)
 
 # ------------------------------------------------------------------
+# FIELDS
+#
+# Change the titles, order or file types of the fields here. Each variable
+# name matches an argument of do_processing(), so that the values can be
+# passed on directly; the tooltips are the HELP_STRINGS in constants.py
+# ------------------------------------------------------------------
+
+# File types for the file dialogs ("All Files" is always added)
+FOLDER = None
+CSV_FILES = [("CSV Files", "*.csv")]
+# One filter for both Markdown and plain text, so that neither is hidden
+TEXT_FILES = [("Markdown or Text Files", ("*.md", "*.markdown", "*.txt"))]
+
+# Required input files: cards in two columns
+INPUT_FILES = [
+    # variable name           title                   file type
+    ("audio_dir",             "Audio folder",         FOLDER),
+    ("elan_dir",              "ELAN folder",          FOLDER),
+    ("speakers_info_file",    "Speakers CSV file",    CSV_FILES),
+    ("recordings_info_file",  "Recordings CSV file",  CSV_FILES),
+]
+
+# Optional files: smaller cards below the input files, in two columns
+OPTIONAL_FILES = [
+    # variable name           title                   file type
+    ("help_file",             "Help file",            TEXT_FILES),
+    ("licence_file",          "Licence file",         TEXT_FILES),
+    ("logos_file",            "Logos CSV file",       CSV_FILES),
+]
+
+# The output folder, in the bottom bar
+OUTPUT_FOLDER = ("output_dir", "Output folder")
+
+# Texts of the TrACE page: a grid with two fields per row, followed by the
+# colors
+PAGE_TEXTS = [
+    # variable name           title
+    ("title",                 "Browser tab title"),
+    ("header",                "Page header"),
+    ("ann_note_tier",         "Notes tier in ELAN"),
+]
+
+# Colors of the TrACE page: clickable swatches
+PAGE_COLORS = [
+    # variable name           title
+    ("primary_color",         "Interface color"),
+    ("ann_highlight_color",   "Current annotation color"),
+    ("filter_match_color",    "Filter match color"),
+]
+
+# Output options, in a small window of their own, since they are rarely
+# changed
+OUTPUT_OPTIONS = [
+    # variable name           title                   explanation
+    ("copy_audio",            "Copy audio files",
+     "Copy the audio files into the TrACE folder. Turn off if they have "
+     "already been copied and haven't changed."),
+    ("generate_data",         "Recreate data",
+     "Recreate the transcripts and speaker data. This is fast, so it "
+     "can usually stay on."),
+    ("generate_html",         "Recreate the TrACE page",
+     "Create the TrACE page from scratch. Turn off if you edited the "
+     "page by hand and want to keep your changes."),
+]
+
+# ------------------------------------------------------------------
 # COLORS
 #
 # The window is a light grey background with white cards on it. Section
@@ -97,10 +163,9 @@ def run_gui():
     def on_run(gui_vars):
         input_vars = {k:v.get() for k,v in gui_vars.items()}
 
-        paths = ["audio_dir", "elan_dir", "output_dir", 
-                 "speakers_info_file", "recordings_info_file",
-                 "help_file", "licence_file", "logos_file"]
-        for v in paths:
+        # Empty paths are passed on as None
+        paths = [field[0] for field in INPUT_FILES + OPTIONAL_FILES]
+        for v in paths + [OUTPUT_FOLDER[0]]:
             if input_vars[v].strip() == "":
                 input_vars[v] = None
 
@@ -593,10 +658,6 @@ def run_gui():
     #
     # Warnings and errors tint the border of a card, or the path text
 
-    csv_types = [('CSV Files', '*.csv')]
-    # One filter for both Markdown and plain text, so that neither is hidden
-    md_types = [('Markdown or Text Files', ('*.md', '*.markdown', '*.txt'))]
-
     # (card border color, status icon, status text color)
     status_styles = {
         "ok": (CARD_BORDER, "✓", MUTED_COLOR),
@@ -849,19 +910,15 @@ def run_gui():
         add_choose_buttons(frame, var, command, widget, row=0, column=4)
         frame.columnconfigure(3, weight=1)
 
-    for i, spec in enumerate([
-        ("audio_dir", "Audio folder", None, True),
-        ("elan_dir", "ELAN folder", None, True),
-        ("speakers_info_file", "Speakers CSV file", csv_types, True),
-        ("recordings_info_file", "Recordings CSV file", csv_types, True),
-    ]):
-        add_path_card(paths_frame, i // 2, i % 2, *spec)
+    # Cards in two columns: the input files, then the optional files
+    for i, (var_name, title, filetypes) in enumerate(INPUT_FILES):
+        add_path_card(paths_frame, i // 2, i % 2, var_name, title, filetypes,
+                      required=True)
 
-    # Optional files, as smaller cards below
-    add_path_row(paths_frame, 2, 0, "help_file", "Help file", md_types)
-    add_path_row(paths_frame, 2, 1, "licence_file", "Licence file", md_types)
-    add_path_row(paths_frame, 3, 0, "logos_file", "Logos CSV file",
-                 csv_types)
+    first_row = (len(INPUT_FILES) + 1) // 2
+    for i, (var_name, title, filetypes) in enumerate(OPTIONAL_FILES):
+        add_path_row(paths_frame, first_row + i // 2, i % 2, var_name, title,
+                     filetypes)
 
     paths_frame.columnconfigure((0, 1), weight=1, uniform="cards")
 
@@ -869,12 +926,13 @@ def run_gui():
     # PAGE OPTIONS
     # ------------------------------------------------------------------
 
-    # One card with a 2x2 grid of fields:
+    # One card with a grid of fields, two per row, ending with the colors:
     #
     #   Browser tab title [      ]    Page header [      ]
     #   Notes tier in ELAN [     ]    Colors      [■] [■] [■] Reset
     #
-    # Columns: label, field, gap, label, field
+    # Columns: label, field, gap, label, field. Field number i is in row
+    # i // 2, and starts in column 0 or 3
     options_card = make_card(options_frame, padding=14)
     options_card.grid(row=0, column=0, sticky="ew", padx=px(4), pady=px(4))
     options_frame.columnconfigure(0, weight=1)
@@ -887,14 +945,12 @@ def run_gui():
                    pady=px(4))
         Tooltip(label, text=help_text, waittime=50)
 
-    # (var name, label, row, column)
-    text_fields = [
-        ("title", "Browser tab title", 0, 0),
-        ("header", "Page header", 0, 3),
-        ("ann_note_tier", "Notes tier in ELAN", 1, 0),
-    ]
+    def option_cell(i):
+        """Row and first column of field number i in the grid"""
+        return i // 2, (i % 2) * 3
 
-    for var_name, label_text, row, column in text_fields:
+    for i, (var_name, label_text) in enumerate(PAGE_TEXTS):
+        row, column = option_cell(i)
         option_label(label_text, row, column, HELP_STRINGS[var_name])
 
         var = tk.StringVar(value=DEFAULTS[var_name])
@@ -911,9 +967,7 @@ def run_gui():
 
     # COLORS: one row of clickable swatches
 
-    color_vars = ["primary_color", "ann_highlight_color", "filter_match_color"]
-    color_labels = ["Interface color", "Current annotation color",
-                    "Filter match color"]
+    color_vars = [var_name for var_name, _ in PAGE_COLORS]
 
     def pick_color(event, var):
         color = colorchooser.askcolor(color=var.get())[1]
@@ -925,14 +979,16 @@ def run_gui():
         for k in color_vars:
             gui_vars[k].set(DEFAULTS[k])
 
-    option_label("Colors", 1, 3,
+    # The colors take the grid cell after the texts
+    colors_row, colors_column = option_cell(len(PAGE_TEXTS))
+    option_label("Colors", colors_row, colors_column,
                  "Colors of the TrACE page. Hover over a color for details, "
                  "and click it to change it.")
 
     swatches_frame = tk.Frame(options_card, bg=CARD_BG)
-    swatches_frame.grid(row=1, column=4, sticky="w")
+    swatches_frame.grid(row=colors_row, column=colors_column + 1, sticky="w")
 
-    for i, var_name in enumerate(color_vars):
+    for i, (var_name, color_label) in enumerate(PAGE_COLORS):
         color_var = tk.StringVar(value=DEFAULTS[var_name])
         gui_vars[var_name] = color_var
 
@@ -948,7 +1004,7 @@ def run_gui():
         tip = Tooltip(swatch, text="", waittime=50)
 
         def update_swatch(*args, v=color_var, s=swatch, t=tip,
-                          name=color_labels[i], help_text=HELP_STRINGS[var_name]):
+                          name=color_label, help_text=HELP_STRINGS[var_name]):
             s.configure(bg=v.get())
             t.text = f"{name}: {v.get()}\n{help_text}\n\nClick to change"
 
@@ -996,8 +1052,7 @@ def run_gui():
     button_frame.pack(fill="x")
 
     # Output folder
-    var, command, widget = add_path_var("output_dir", "Output folder", None,
-                                        True, "bar")
+    var, command, widget = add_path_var(*OUTPUT_FOLDER, FOLDER, True, "bar")
     widget["path_color"] = TEXT_COLOR
 
     # A small caption above the path, and everything else on the line of
@@ -1009,7 +1064,7 @@ def run_gui():
 
     caption = ttk.Label(button_frame, text="SAVE TO", style="Caption.TLabel")
     caption.grid(row=0, column=1, sticky="w")
-    Tooltip(caption, text=HELP_STRINGS["output_dir"], waittime=50)
+    Tooltip(caption, text=HELP_STRINGS[OUTPUT_FOLDER[0]], waittime=50)
 
     widget["path"] = ttk.Label(button_frame, style="CardText.TLabel")
     widget["path"].grid(row=1, column=1, sticky="w")
@@ -1019,21 +1074,8 @@ def run_gui():
                        removable=False)
     widget["choose"].grid(padx=(px(16), 0))
 
-    # Output options, in a small window of their own, since they are
-    # rarely changed
-    checkbox_specs = [
-        ("copy_audio", "Copy audio files",
-         "Copy the audio files into the TrACE folder. Turn off if they have "
-         "already been copied and haven't changed."),
-        ("generate_data", "Recreate data",
-         "Recreate the transcripts and speaker data. This is fast, so it "
-         "can usually stay on."),
-        ("generate_html", "Recreate the TrACE page",
-         "Create the TrACE page from scratch. Turn off if you edited the "
-         "page by hand and want to keep your changes."),
-    ]
-
-    for var_name, _, _ in checkbox_specs:
+    # Output options, in a small window of their own
+    for var_name, _, _ in OUTPUT_OPTIONS:
         gui_vars[var_name] = tk.BooleanVar(value=True)
 
     def open_output_options():
@@ -1043,7 +1085,7 @@ def run_gui():
         dialog.resizable(False, False)
 
         for i, (var_name, label_text, explanation) in enumerate(
-                checkbox_specs):
+                OUTPUT_OPTIONS):
             ttk.Checkbutton(
                 dialog,
                 text=label_text,
@@ -1066,7 +1108,7 @@ def run_gui():
             text="Close",
             style="Card.TButton",
             command=dialog.destroy
-        ).grid(row=2 * len(checkbox_specs), column=0, sticky="e",
+        ).grid(row=2 * len(OUTPUT_OPTIONS), column=0, sticky="e",
                pady=(px(16), 0))
 
         dialog.bind("<Escape>", lambda event: dialog.destroy())
@@ -1086,12 +1128,12 @@ def run_gui():
 
     def update_options_button(*args):
         # Show when some steps are turned off, so it's not forgotten
-        n_off = sum(not gui_vars[v].get() for v, _, _ in checkbox_specs)
+        n_off = sum(not gui_vars[v].get() for v, _, _ in OUTPUT_OPTIONS)
         options_button.configure(
             text=f"Options ({n_off} off)…" if n_off else "Options…"
         )
 
-    for var_name, _, _ in checkbox_specs:
+    for var_name, _, _ in OUTPUT_OPTIONS:
         gui_vars[var_name].trace_add("write", update_options_button)
     update_options_button()
 
