@@ -17,7 +17,7 @@ import sys
 import os
 
 from constants import HELP_STRINGS, DEFAULTS
-from processing import do_processing
+from processing import do_processing, read_page_content
 from checks import (AUDIO_EXTENSIONS, check_folder, check_speakers,
                     check_recordings, check_markdown, check_logos,
                     check_output)
@@ -249,6 +249,13 @@ def run_gui():
         for v in paths + [OUTPUT_FOLDER[0]]:
             if input_vars[v].strip() == "":
                 input_vars[v] = None
+
+        # An optional file that is not chosen keeps the content of the
+        # existing page (None), unless it was removed with ✕ ("")
+        for var_name, _, _ in OPTIONAL_FILES:
+            if (input_vars[var_name] is None and
+                    not path_widgets[var_name].get("keep")):
+                input_vars[var_name] = ""
 
         # All steps are always run from the GUI: copying the audio and
         # recreating the data are quick for typical collections, and edited
@@ -869,9 +876,12 @@ def run_gui():
                 widget["frame"].configure(highlightbackground=border,
                                           highlightcolor=border)
 
+            # Content of the existing page, kept when no file is chosen
+            kept = not value and widget.get("keep", False)
+
             if "icon" in widget:
                 draw_icon(widget["icon"], widget["filetypes"],
-                          icon_colors["set" if value else "empty"],
+                          icon_colors["set" if value or kept else "empty"],
                           widget["icon_size"])
 
             if kind == "card":
@@ -890,7 +900,12 @@ def run_gui():
                 shown_path = full_path
                 if kind == "bar" and value:
                     shown_path = str(Path(full_path).joinpath("TrACE"))
-                if not value:
+                if kept:
+                    text = "Kept from the existing page"
+                    tip = ("The content already in TrACE.html is kept. "
+                           "Choose a file to replace it, or ✕ to remove "
+                           "it.")
+                elif not value:
                     text = "Not chosen"
                 elif status == "ok":
                     text = shorten_path(shown_path, max_len)
@@ -906,7 +921,7 @@ def run_gui():
             widget["choose"].configure(text="Change…" if value
                                        else "Choose…")
             if "remove" in widget:
-                if value:
+                if value or kept:
                     widget["remove"].grid()
                 else:
                     widget["remove"].grid_remove()
@@ -948,6 +963,11 @@ def run_gui():
         path_widgets[var_name] = widget
         return var, command, widget
 
+    def remove_path(var, widget):
+        """Remove a chosen file, and the content kept from the page (✕)"""
+        widget["keep"] = False
+        var.set("")
+
     def add_choose_buttons(parent, var, command, widget, row, column,
                            removable=True):
         """Add the Choose/Change button, and optionally the ✕ button"""
@@ -958,7 +978,8 @@ def run_gui():
         if removable:
             widget["remove"] = ttk.Button(parent, text="✕", width=2,
                                           style="Ghost.TButton",
-                                          command=lambda v=var: v.set(""))
+                                          command=lambda v=var, w=widget:
+                                              remove_path(v, w))
             widget["remove"].grid(row=row, column=column + 1,
                                   padx=(px(2), 0))
             Tooltip(widget["remove"], text="Remove", waittime=50)
@@ -1209,6 +1230,21 @@ def run_gui():
         command=lambda v=gui_vars: on_run(v)
     )
     run_controls["button"].grid(row=1, column=6, sticky="e")
+
+    def update_kept_content(*args):
+        """
+        Note which optional files have content in the existing page, in the
+        output folder; it's kept unless a file is chosen or ✕ is clicked
+        """
+        output_dir = gui_vars[OUTPUT_FOLDER[0]].get().strip() or "."
+        html_file = Path(output_dir).joinpath("TrACE", "TrACE.html")
+        page_content = read_page_content(html_file)
+        for var_name, _, _ in OPTIONAL_FILES:
+            path_widgets[var_name]["keep"] = var_name in page_content
+        refresh_paths()
+
+    gui_vars[OUTPUT_FOLDER[0]].trace_add("write", update_kept_content)
+    update_kept_content()
 
     button_frame.columnconfigure(5, weight=1)
 

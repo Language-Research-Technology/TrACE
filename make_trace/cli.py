@@ -4,7 +4,7 @@ import textwrap
 from pathlib import Path
 
 from constants import DEFAULTS, HELP_STRINGS
-from processing import do_processing
+from processing import do_processing, read_page_content
 
 
 # Wrap the help text and print defalut values in the CLI help message
@@ -153,28 +153,36 @@ template_group.add_argument("--filter_match_color",
                                 f"\n  Default: {DEFAULTS['filter_match_color']}\n")
                             )
 
+# Help, licence and logos are kept from an existing page, unless a file is
+# given (see processing.do_processing())
+KEPT_CONTENT_HELP = ("\n  Default: kept from the existing TrACE page, if " +
+                     "any. Give an empty value (\"\") to remove it.\n")
+
 template_group.add_argument("--help_file",
                             dest="help_file",
-                            type=Path,
+                            # Not Path: Path("") would turn into "."
+                            type=str,
                             metavar="",
                             help=(HELP_STRINGS["help_file"] + 
-                                "\n  Default: None\n")
+                                  KEPT_CONTENT_HELP)
                             )
 
 template_group.add_argument("--licence_file",
                             dest="licence_file",
-                            type=Path,
+                            # Not Path: Path("") would turn into "."
+                            type=str,
                             metavar="",
                             help=(HELP_STRINGS["licence_file"] + 
-                                "\n  Default: None\n")
+                                  KEPT_CONTENT_HELP)
                             )
 
 template_group.add_argument("--logos_file",
                             dest="logos_file",
-                            type=Path,
+                            # Not Path: Path("") would turn into "."
+                            type=str,
                             metavar="",
                             help=(HELP_STRINGS["logos_file"] + 
-                                "\n  Default: None\n")
+                                  KEPT_CONTENT_HELP)
                             )
 
 processing_group = parser.add_argument_group(
@@ -236,5 +244,18 @@ def run_cli():
     # warning about the option
     if args_dict.pop("force_html"):
         args_dict["confirm_replace_html"] = lambda path: True
+
+    # Say which content of the existing page is kept
+    if args_dict["generate_html"]:
+        html_file = Path(args_dict["output_dir"]).joinpath("TrACE",
+                                                           "TrACE.html")
+        page_content = read_page_content(html_file)
+        for option, what in [("help_file", "Help text"),
+                             ("licence_file", "Licence text"),
+                             ("logos_file", "Logos")]:
+            if args_dict[option] is None and option in page_content:
+                print(f"{what}: kept from the existing page (use "
+                      f"--{option} to replace it, or --{option} \"\" to "
+                      "remove it)")
     print(args_dict)
     do_processing(**args_dict)
