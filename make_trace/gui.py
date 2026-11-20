@@ -410,7 +410,7 @@ def run_gui():
     style.theme_use('clam') 
 
     # The window is a light grey background with white cards on it. Section
-    # headings are plain bold text, and only the Run button is coloured
+    # headings are plain bold text, and only the Run button is colored
     bg_color = "#f5f6f8"
     card_bg = "#ffffff"
     card_border = "#dee2e6"
@@ -797,7 +797,7 @@ def run_gui():
                 )
             else:
                 # Rows and the bottom bar have no room for the info, so
-                # it goes into the tooltip, and only problems are coloured
+                # it goes into the tooltip, and only problems are colored
                 max_len = 18 if kind == "row" else 32
                 shown_path = full_path
                 if kind == "bar" and value:
@@ -1003,18 +1003,18 @@ def run_gui():
 
     # COLORS: one row of clickable swatches
 
-    colour_vars = ["primary_color", "ann_highlight_color", "filter_match_color"]
+    color_vars = ["primary_color", "ann_highlight_color", "filter_match_color"]
     color_labels = ["Interface color", "Current annotation color",
                     "Filter match color"]
 
-    def pick_colour(event, var):
-        colour = colorchooser.askcolor(color=var.get())[1]
-        if colour:
+    def pick_color(event, var):
+        color = colorchooser.askcolor(color=var.get())[1]
+        if color:
             # The swatch is updated by the trace on the variable
-            var.set(colour)
+            var.set(color)
 
     def reset_colors():
-        for k in colour_vars:
+        for k in color_vars:
             gui_vars[k].set(DEFAULTS[k])
 
     option_label("Colors", 1, 3,
@@ -1024,13 +1024,13 @@ def run_gui():
     swatches_frame = tk.Frame(options_card, bg=card_bg)
     swatches_frame.grid(row=1, column=4, sticky="w")
 
-    for i, var_name in enumerate(colour_vars):
-        colour_var = tk.StringVar(value=DEFAULTS[var_name])
-        gui_vars[var_name] = colour_var
+    for i, var_name in enumerate(color_vars):
+        color_var = tk.StringVar(value=DEFAULTS[var_name])
+        gui_vars[var_name] = color_var
 
         swatch = tk.Label(
             swatches_frame,
-            bg=colour_var.get(),
+            bg=color_var.get(),
             width=3,
             highlightthickness=1,
             highlightbackground=card_border,
@@ -1039,17 +1039,17 @@ def run_gui():
         swatch.grid(row=0, column=i, padx=(0, px(6)))
         tip = Tooltip(swatch, text="", waittime=50)
 
-        def update_swatch(*args, v=colour_var, s=swatch, t=tip,
+        def update_swatch(*args, v=color_var, s=swatch, t=tip,
                           name=color_labels[i], help_text=HELP_STRINGS[var_name]):
             s.configure(bg=v.get())
             t.text = f"{name}: {v.get()}\n{help_text}\n\nClick to change"
 
-        colour_var.trace_add("write", update_swatch)
+        color_var.trace_add("write", update_swatch)
         update_swatch()
 
         swatch.bind(
             "<Button-1>",
-            lambda event, v=colour_var: pick_colour(event, v)
+            lambda event, v=color_var: pick_color(event, v)
         )
 
     reset_button = ttk.Button(
@@ -1064,10 +1064,10 @@ def run_gui():
     def update_reset_button(*args):
         # Only enabled when some color differs from its default
         changed = any(gui_vars[k].get().lower() != DEFAULTS[k].lower()
-                      for k in colour_vars)
+                      for k in color_vars)
         reset_button.state(["!disabled"] if changed else ["disabled"])
 
-    for var_name in colour_vars:
+    for var_name in color_vars:
         gui_vars[var_name].trace_add("write", update_reset_button)
     update_reset_button()
 
