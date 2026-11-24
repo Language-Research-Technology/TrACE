@@ -4,9 +4,9 @@ import textwrap
 from pathlib import Path
 
 from constants import DEFAULTS, HELP_STRINGS
-from processing import (do_processing, page_file, read_page_content,
-                        read_previous_settings, LAST_RUN_FILE,
-                        SAVED_OPTIONS)
+from processing import (do_processing, get_TrACE_file,
+                        read_TrACE_info_sections, read_previous_settings,
+                        LAST_RUN_FILE, SAVED_OPTIONS)
 
 
 # Wrap the help text and print defalut values in the CLI help message
@@ -161,9 +161,9 @@ template_group.add_argument("--filter_match_color",
                                 f"\n  Default: as in the existing page, or {DEFAULTS['filter_match_color']}\n")
                             )
 
-# Help, licence and logos are kept from an existing page, unless a file is
-# given (see processing.do_processing())
-KEPT_CONTENT_HELP = ("\n  Default: kept from the existing TrACE page, if " +
+# The info sections (help, licence and logos) are kept from an existing
+# page, unless a file is given (see processing.create_page())
+KEPT_SECTION_HELP = ("\n  Default: kept from the existing TrACE page, if " +
                      "any. Give an empty value (\"\") to remove it.\n")
 
 template_group.add_argument("--help_file",
@@ -172,7 +172,7 @@ template_group.add_argument("--help_file",
                             type=str,
                             metavar="",
                             help=(HELP_STRINGS["help_file"] + 
-                                  KEPT_CONTENT_HELP)
+                                  KEPT_SECTION_HELP)
                             )
 
 template_group.add_argument("--licence_file",
@@ -181,7 +181,7 @@ template_group.add_argument("--licence_file",
                             type=str,
                             metavar="",
                             help=(HELP_STRINGS["licence_file"] + 
-                                  KEPT_CONTENT_HELP)
+                                  KEPT_SECTION_HELP)
                             )
 
 template_group.add_argument("--logos_file",
@@ -190,7 +190,7 @@ template_group.add_argument("--logos_file",
                             type=str,
                             metavar="",
                             help=(HELP_STRINGS["logos_file"] + 
-                                  KEPT_CONTENT_HELP)
+                                  KEPT_SECTION_HELP)
                             )
 
 processing_group = parser.add_argument_group(
@@ -264,18 +264,28 @@ def run_cli():
     for origin, options in reused.items():
         print(f"Using settings from {origin}: {', '.join(options)}")
 
-    # Without --force_html, nobody is asked: an edited page is kept, with a
-    # warning about the option
-    if args_dict.pop("force_html"):
-        args_dict["confirm_replace_html"] = lambda path: True
+    # Whether to replace a TrACE page with hand edits: only with
+    # --force_html. Without it, the page is kept, with a hint about the
+    # option
+    def keep_edited_page(html_file):
+        print(f"{html_file.name} was changed since it was created, so it "
+              "was kept. To replace it (a backup will be kept), use "
+              "--force_html.")
+        return False
 
-    # Say which content of the existing page is kept
+    if args_dict.pop("force_html"):
+        args_dict["confirm_replace_callback"] = lambda html_file: True
+    else:
+        args_dict["confirm_replace_callback"] = keep_edited_page
+
+    # Say which info sections of the existing page are kept
     if args_dict["generate_html"]:
-        page_content = read_page_content(page_file(args_dict["output_dir"]))
+        info_sections = read_TrACE_info_sections(
+            get_TrACE_file(args_dict["output_dir"]))
         for option, what in [("help_file", "Help text"),
                              ("licence_file", "Licence text"),
                              ("logos_file", "Logos")]:
-            if args_dict[option] is None and option in page_content:
+            if args_dict[option] is None and option in info_sections:
                 print(f"{what}: kept from the existing page (use "
                       f"--{option} to replace it, or --{option} \"\" to "
                       "remove it)")

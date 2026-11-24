@@ -17,9 +17,10 @@ import sys
 import os
 
 from constants import HELP_STRINGS, DEFAULTS
-from processing import (do_processing, page_file, read_page_content,
-                        read_page_options, read_previous_settings,
-                        normalize_color, LAST_RUN_FILE)
+from processing import (do_processing, get_TrACE_file,
+                        read_TrACE_info_sections, read_TrACE_options,
+                        read_previous_settings, normalize_color,
+                        LAST_RUN_FILE)
 from checks import (AUDIO_EXTENSIONS, check_folder, check_speakers,
                     check_recordings, check_markdown, check_logos,
                     check_output)
@@ -252,7 +253,7 @@ def run_gui():
             if input_vars[v].strip() == "":
                 input_vars[v] = None
 
-        # An optional file that is not chosen keeps the content of the
+        # An optional file that is not chosen keeps the info section of the
         # existing page (None), unless it was removed with ✕ ("")
         for var_name, _, _ in OPTIONAL_FILES:
             if (input_vars[var_name] is None and
@@ -265,7 +266,7 @@ def run_gui():
         input_vars.update(copy_audio=True, generate_data=True,
                           generate_html=True)
         input_vars["report_callback"] = report
-        input_vars["confirm_replace_html"] = confirm_replace_html
+        input_vars["confirm_replace_callback"] = confirm_replace_html
 
         root.configure(cursor="watch")
         root.update_idletasks()
@@ -951,7 +952,7 @@ def run_gui():
                 widget["frame"].configure(highlightbackground=border,
                                           highlightcolor=border)
 
-            # Content of the existing page, kept when no file is chosen
+            # Info section of the existing page, kept when no file is chosen
             kept = not value and widget.get("keep", False)
 
             if "icon" in widget:
@@ -1100,7 +1101,8 @@ def run_gui():
         return var, command, widget
 
     def remove_path(var, widget):
-        """Remove a chosen file, and the content kept from the page (✕)"""
+        """Remove a chosen file, and the info section kept from the page
+        (✕)"""
         widget["keep"] = False
         var.set("")
 
@@ -1403,12 +1405,13 @@ def run_gui():
     def load_output_folder(*args):
         """
         Fill in the fields from the previous run in the output folder, and
-        note which optional files have content in the existing page
+        note which info sections (help, licence, logos) the existing page
+        has
 
         The page options come from the existing page, and the files from
         the settings of the last successful run (see
-        processing.read_previous_settings()). Content of the page is kept
-        unless a file is chosen or ✕ is clicked.
+        processing.read_previous_settings()). The info sections of the page
+        are kept unless a file is chosen or ✕ is clicked.
         """
         output_dir = gui_vars[OUTPUT_FOLDER[0]].get().strip() or "."
         settings, origins = read_previous_settings(output_dir)
@@ -1416,10 +1419,10 @@ def run_gui():
             if option in gui_vars and value is not None:
                 gui_vars[option].set(value)
 
-        page_content = read_page_content(page_file(output_dir))
+        info_sections = read_TrACE_info_sections(get_TrACE_file(output_dir))
         for var_name, _, _ in OPTIONAL_FILES:
-            # Content removed in the last run ("") stays removed
-            path_widgets[var_name]["keep"] = (var_name in page_content and
+            # A section removed in the last run ("") stays removed
+            path_widgets[var_name]["keep"] = (var_name in info_sections and
                                               settings.get(var_name) != "")
 
         # Mention in the tooltip of SAVE TO that the files are remembered
@@ -1440,7 +1443,8 @@ def run_gui():
     def read_existing_page():
         """Read the page options of the existing page in the output folder"""
         output_dir = gui_vars[OUTPUT_FOLDER[0]].get().strip() or "."
-        existing_page["options"] = read_page_options(page_file(output_dir))
+        existing_page["options"] = read_TrACE_options(
+            get_TrACE_file(output_dir))
         update_change_markers()
 
     gui_vars[OUTPUT_FOLDER[0]].trace_add("write", load_output_folder)
