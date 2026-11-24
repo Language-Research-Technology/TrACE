@@ -1,0 +1,6 @@
+# Exclude folder with generated example page
+TrACE/
+
+# Exclude demo page for VRA
+VRA_demo/
+make_vra_demo.py
