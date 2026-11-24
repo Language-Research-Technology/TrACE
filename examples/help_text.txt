@@ -1,0 +1,11 @@
+# TrACE examples
+
+This is a test help file. You can use Markdown features, e.g., *italics*, 
+**bold**, headers/subheaders with "#" or lists.
+
+## Subheader example
+
++ Item 1
++ Item 2
+	+ Item 2.1
+	

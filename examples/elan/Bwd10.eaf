@@ -1,0 +1,567 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ANNOTATION_DOCUMENT AUTHOR="" DATE="2026-08-11T14:57:58+10:00"
+    FORMAT="3.0" VERSION="3.0"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://www.mpi.nl/tools/elan/EAFv3.0.xsd">
+    <HEADER MEDIA_FILE="" TIME_UNITS="milliseconds">
+        <PROPERTY NAME="URN">urn:nl-mpi-tools-elan-eaf:4a968385-ee16-4626-9e53-f42f841eef15</PROPERTY>
+        <PROPERTY NAME="lastUsedAnnotationId">67</PROPERTY>
+    </HEADER>
+    <TIME_ORDER>
+        <TIME_SLOT TIME_SLOT_ID="ts1" TIME_VALUE="530"/>
+        <TIME_SLOT TIME_SLOT_ID="ts2" TIME_VALUE="1854"/>
+        <TIME_SLOT TIME_SLOT_ID="ts3" TIME_VALUE="2604"/>
+        <TIME_SLOT TIME_SLOT_ID="ts4" TIME_VALUE="5461"/>
+        <TIME_SLOT TIME_SLOT_ID="ts5" TIME_VALUE="6061"/>
+        <TIME_SLOT TIME_SLOT_ID="ts6" TIME_VALUE="9505"/>
+        <TIME_SLOT TIME_SLOT_ID="ts7" TIME_VALUE="10122"/>
+        <TIME_SLOT TIME_SLOT_ID="ts8" TIME_VALUE="10784"/>
+        <TIME_SLOT TIME_SLOT_ID="ts9" TIME_VALUE="11941"/>
+        <TIME_SLOT TIME_SLOT_ID="ts10" TIME_VALUE="15000"/>
+        <TIME_SLOT TIME_SLOT_ID="ts11" TIME_VALUE="15727"/>
+        <TIME_SLOT TIME_SLOT_ID="ts12" TIME_VALUE="17232"/>
+        <TIME_SLOT TIME_SLOT_ID="ts13" TIME_VALUE="17949"/>
+        <TIME_SLOT TIME_SLOT_ID="ts14" TIME_VALUE="23000"/>
+        <TIME_SLOT TIME_SLOT_ID="ts15" TIME_VALUE="23755"/>
+        <TIME_SLOT TIME_SLOT_ID="ts16" TIME_VALUE="27118"/>
+        <TIME_SLOT TIME_SLOT_ID="ts17" TIME_VALUE="27698"/>
+        <TIME_SLOT TIME_SLOT_ID="ts18" TIME_VALUE="31813"/>
+        <TIME_SLOT TIME_SLOT_ID="ts19" TIME_VALUE="33000"/>
+        <TIME_SLOT TIME_SLOT_ID="ts20" TIME_VALUE="37423"/>
+        <TIME_SLOT TIME_SLOT_ID="ts21" TIME_VALUE="37423"/>
+        <TIME_SLOT TIME_SLOT_ID="ts22" TIME_VALUE="44197"/>
+        <TIME_SLOT TIME_SLOT_ID="ts23" TIME_VALUE="45000"/>
+        <TIME_SLOT TIME_SLOT_ID="ts24" TIME_VALUE="49372"/>
+        <TIME_SLOT TIME_SLOT_ID="ts25" TIME_VALUE="50045"/>
+        <TIME_SLOT TIME_SLOT_ID="ts26" TIME_VALUE="53760"/>
+        <TIME_SLOT TIME_SLOT_ID="ts27" TIME_VALUE="54645"/>
+        <TIME_SLOT TIME_SLOT_ID="ts28" TIME_VALUE="58232"/>
+        <TIME_SLOT TIME_SLOT_ID="ts29" TIME_VALUE="59160"/>
+        <TIME_SLOT TIME_SLOT_ID="ts30" TIME_VALUE="62546"/>
+        <TIME_SLOT TIME_SLOT_ID="ts31" TIME_VALUE="63231"/>
+        <TIME_SLOT TIME_SLOT_ID="ts32" TIME_VALUE="69808"/>
+        <TIME_SLOT TIME_SLOT_ID="ts33" TIME_VALUE="69822"/>
+        <TIME_SLOT TIME_SLOT_ID="ts34" TIME_VALUE="70229"/>
+        <TIME_SLOT TIME_SLOT_ID="ts35" TIME_VALUE="70238"/>
+        <TIME_SLOT TIME_SLOT_ID="ts36" TIME_VALUE="72063"/>
+        <TIME_SLOT TIME_SLOT_ID="ts37" TIME_VALUE="73000"/>
+        <TIME_SLOT TIME_SLOT_ID="ts38" TIME_VALUE="73616"/>
+        <TIME_SLOT TIME_SLOT_ID="ts39" TIME_VALUE="74236"/>
+        <TIME_SLOT TIME_SLOT_ID="ts40" TIME_VALUE="75645"/>
+        <TIME_SLOT TIME_SLOT_ID="ts41" TIME_VALUE="76540"/>
+        <TIME_SLOT TIME_SLOT_ID="ts42" TIME_VALUE="79319"/>
+        <TIME_SLOT TIME_SLOT_ID="ts43" TIME_VALUE="80070"/>
+        <TIME_SLOT TIME_SLOT_ID="ts44" TIME_VALUE="81645"/>
+        <TIME_SLOT TIME_SLOT_ID="ts45" TIME_VALUE="82656"/>
+        <TIME_SLOT TIME_SLOT_ID="ts46" TIME_VALUE="83337"/>
+        <TIME_SLOT TIME_SLOT_ID="ts47" TIME_VALUE="84162"/>
+        <TIME_SLOT TIME_SLOT_ID="ts48" TIME_VALUE="89545"/>
+        <TIME_SLOT TIME_SLOT_ID="ts49" TIME_VALUE="90482"/>
+        <TIME_SLOT TIME_SLOT_ID="ts50" TIME_VALUE="92773"/>
+        <TIME_SLOT TIME_SLOT_ID="ts51" TIME_VALUE="93238"/>
+        <TIME_SLOT TIME_SLOT_ID="ts52" TIME_VALUE="97267"/>
+        <TIME_SLOT TIME_SLOT_ID="ts53" TIME_VALUE="97923"/>
+        <TIME_SLOT TIME_SLOT_ID="ts54" TIME_VALUE="101772"/>
+        <TIME_SLOT TIME_SLOT_ID="ts55" TIME_VALUE="102347"/>
+        <TIME_SLOT TIME_SLOT_ID="ts56" TIME_VALUE="109488"/>
+        <TIME_SLOT TIME_SLOT_ID="ts57" TIME_VALUE="110156"/>
+        <TIME_SLOT TIME_SLOT_ID="ts58" TIME_VALUE="115488"/>
+        <TIME_SLOT TIME_SLOT_ID="ts59" TIME_VALUE="116612"/>
+        <TIME_SLOT TIME_SLOT_ID="ts60" TIME_VALUE="119088"/>
+        <TIME_SLOT TIME_SLOT_ID="ts61" TIME_VALUE="120127"/>
+        <TIME_SLOT TIME_SLOT_ID="ts62" TIME_VALUE="121534"/>
+        <TIME_SLOT TIME_SLOT_ID="ts63" TIME_VALUE="122533"/>
+        <TIME_SLOT TIME_SLOT_ID="ts64" TIME_VALUE="123313"/>
+        <TIME_SLOT TIME_SLOT_ID="ts65" TIME_VALUE="124157"/>
+        <TIME_SLOT TIME_SLOT_ID="ts66" TIME_VALUE="128505"/>
+        <TIME_SLOT TIME_SLOT_ID="ts67" TIME_VALUE="129432"/>
+        <TIME_SLOT TIME_SLOT_ID="ts68" TIME_VALUE="131348"/>
+        <TIME_SLOT TIME_SLOT_ID="ts69" TIME_VALUE="132441"/>
+        <TIME_SLOT TIME_SLOT_ID="ts70" TIME_VALUE="139482"/>
+        <TIME_SLOT TIME_SLOT_ID="ts71" TIME_VALUE="140225"/>
+        <TIME_SLOT TIME_SLOT_ID="ts72" TIME_VALUE="145430"/>
+        <TIME_SLOT TIME_SLOT_ID="ts73" TIME_VALUE="145550"/>
+        <TIME_SLOT TIME_SLOT_ID="ts74" TIME_VALUE="149215"/>
+        <TIME_SLOT TIME_SLOT_ID="ts75" TIME_VALUE="149883"/>
+        <TIME_SLOT TIME_SLOT_ID="ts76" TIME_VALUE="156095"/>
+        <TIME_SLOT TIME_SLOT_ID="ts77" TIME_VALUE="156924"/>
+        <TIME_SLOT TIME_SLOT_ID="ts78" TIME_VALUE="161000"/>
+        <TIME_SLOT TIME_SLOT_ID="ts79" TIME_VALUE="161892"/>
+        <TIME_SLOT TIME_SLOT_ID="ts80" TIME_VALUE="162790"/>
+        <TIME_SLOT TIME_SLOT_ID="ts81" TIME_VALUE="163469"/>
+        <TIME_SLOT TIME_SLOT_ID="ts82" TIME_VALUE="169395"/>
+        <TIME_SLOT TIME_SLOT_ID="ts83" TIME_VALUE="170418"/>
+        <TIME_SLOT TIME_SLOT_ID="ts84" TIME_VALUE="171645"/>
+        <TIME_SLOT TIME_SLOT_ID="ts85" TIME_VALUE="172249"/>
+        <TIME_SLOT TIME_SLOT_ID="ts86" TIME_VALUE="174523"/>
+        <TIME_SLOT TIME_SLOT_ID="ts87" TIME_VALUE="175197"/>
+        <TIME_SLOT TIME_SLOT_ID="ts88" TIME_VALUE="176586"/>
+        <TIME_SLOT TIME_SLOT_ID="ts89" TIME_VALUE="177880"/>
+        <TIME_SLOT TIME_SLOT_ID="ts90" TIME_VALUE="178264"/>
+        <TIME_SLOT TIME_SLOT_ID="ts91" TIME_VALUE="179616"/>
+        <TIME_SLOT TIME_SLOT_ID="ts92" TIME_VALUE="181436"/>
+        <TIME_SLOT TIME_SLOT_ID="ts93" TIME_VALUE="182180"/>
+        <TIME_SLOT TIME_SLOT_ID="ts94" TIME_VALUE="184000"/>
+        <TIME_SLOT TIME_SLOT_ID="ts95" TIME_VALUE="184558"/>
+        <TIME_SLOT TIME_SLOT_ID="ts96" TIME_VALUE="190098"/>
+        <TIME_SLOT TIME_SLOT_ID="ts97" TIME_VALUE="190250"/>
+        <TIME_SLOT TIME_SLOT_ID="ts98" TIME_VALUE="194232"/>
+        <TIME_SLOT TIME_SLOT_ID="ts99" TIME_VALUE="194802"/>
+        <TIME_SLOT TIME_SLOT_ID="ts100" TIME_VALUE="199988"/>
+        <TIME_SLOT TIME_SLOT_ID="ts101" TIME_VALUE="201052"/>
+        <TIME_SLOT TIME_SLOT_ID="ts102" TIME_VALUE="201889"/>
+        <TIME_SLOT TIME_SLOT_ID="ts103" TIME_VALUE="202604"/>
+        <TIME_SLOT TIME_SLOT_ID="ts104" TIME_VALUE="205279"/>
+        <TIME_SLOT TIME_SLOT_ID="ts105" TIME_VALUE="205934"/>
+        <TIME_SLOT TIME_SLOT_ID="ts106" TIME_VALUE="211058"/>
+        <TIME_SLOT TIME_SLOT_ID="ts107" TIME_VALUE="211936"/>
+        <TIME_SLOT TIME_SLOT_ID="ts108" TIME_VALUE="219441"/>
+        <TIME_SLOT TIME_SLOT_ID="ts109" TIME_VALUE="220104"/>
+        <TIME_SLOT TIME_SLOT_ID="ts110" TIME_VALUE="224447"/>
+        <TIME_SLOT TIME_SLOT_ID="ts111" TIME_VALUE="225536"/>
+        <TIME_SLOT TIME_SLOT_ID="ts112" TIME_VALUE="226656"/>
+        <TIME_SLOT TIME_SLOT_ID="ts113" TIME_VALUE="227482"/>
+        <TIME_SLOT TIME_SLOT_ID="ts114" TIME_VALUE="232133"/>
+        <TIME_SLOT TIME_SLOT_ID="ts115" TIME_VALUE="232866"/>
+        <TIME_SLOT TIME_SLOT_ID="ts116" TIME_VALUE="235046"/>
+        <TIME_SLOT TIME_SLOT_ID="ts117" TIME_VALUE="235866"/>
+        <TIME_SLOT TIME_SLOT_ID="ts118" TIME_VALUE="237103"/>
+        <TIME_SLOT TIME_SLOT_ID="ts119" TIME_VALUE="237760"/>
+        <TIME_SLOT TIME_SLOT_ID="ts120" TIME_VALUE="238360"/>
+        <TIME_SLOT TIME_SLOT_ID="ts121" TIME_VALUE="239122"/>
+        <TIME_SLOT TIME_SLOT_ID="ts122" TIME_VALUE="246662"/>
+        <TIME_SLOT TIME_SLOT_ID="ts123" TIME_VALUE="247784"/>
+        <TIME_SLOT TIME_SLOT_ID="ts124" TIME_VALUE="250650"/>
+        <TIME_SLOT TIME_SLOT_ID="ts125" TIME_VALUE="251686"/>
+        <TIME_SLOT TIME_SLOT_ID="ts126" TIME_VALUE="254883"/>
+        <TIME_SLOT TIME_SLOT_ID="ts127" TIME_VALUE="256158"/>
+        <TIME_SLOT TIME_SLOT_ID="ts128" TIME_VALUE="261397"/>
+        <TIME_SLOT TIME_SLOT_ID="ts129" TIME_VALUE="262263"/>
+        <TIME_SLOT TIME_SLOT_ID="ts130" TIME_VALUE="262662"/>
+        <TIME_SLOT TIME_SLOT_ID="ts131" TIME_VALUE="264453"/>
+        <TIME_SLOT TIME_SLOT_ID="ts132" TIME_VALUE="266000"/>
+        <TIME_SLOT TIME_SLOT_ID="ts133" TIME_VALUE="266645"/>
+        <TIME_SLOT TIME_SLOT_ID="ts134" TIME_VALUE="267319"/>
+    </TIME_ORDER>
+    <TIER LINGUISTIC_TYPE_REF="imported-sep" TIER_ID="Dawn">
+        <ANNOTATION>
+            <ALIGNABLE_ANNOTATION ANNOTATION_ID="a1"
+                TIME_SLOT_REF1="ts1" TIME_SLOT_REF2="ts2">
+                <ANNOTATION_VALUE>Mum and Dad were sort of</ANNOTATION_VALUE>
+            </ALIGNABLE_ANNOTATION>
+        </ANNOTATION>
+        <ANNOTATION>
+            <ALIGNABLE_ANNOTATION ANNOTATION_ID="a2"
+                TIME_SLOT_REF1="ts3" TIME_SLOT_REF2="ts4">
+                <ANNOTATION_VALUE>just doing their thing down the farm and cleaning up and</ANNOTATION_VALUE>
+            </ALIGNABLE_ANNOTATION>
+        </ANNOTATION>
+        <ANNOTATION>
+            <ALIGNABLE_ANNOTATION ANNOTATION_ID="a3"
+                TIME_SLOT_REF1="ts5" TIME_SLOT_REF2="ts6">
+                <ANNOTATION_VALUE>pottering along and I think you never kind of think it's gonna happen to you.</ANNOTATION_VALUE>
+            </ALIGNABLE_ANNOTATION>
+        </ANNOTATION>
+        <ANNOTATION>
+            <ALIGNABLE_ANNOTATION ANNOTATION_ID="a4"
+                TIME_SLOT_REF1="ts7" TIME_SLOT_REF2="ts8">
+                <ANNOTATION_VALUE>So</ANNOTATION_VALUE>
+            </ALIGNABLE_ANNOTATION>
+        </ANNOTATION>
+        <ANNOTATION>
+            <ALIGNABLE_ANNOTATION ANNOTATION_ID="a5"
+                TIME_SLOT_REF1="ts9" TIME_SLOT_REF2="ts10">
+                <ANNOTATION_VALUE>You know, they were doing all they all they could. And</ANNOTATION_VALUE>
+            </ALIGNABLE_ANNOTATION>
+        </ANNOTATION>
+        <ANNOTATION>
+            <ALIGNABLE_ANNOTATION ANNOTATION_ID="a6"
+                TIME_SLOT_REF1="ts11" TIME_SLOT_REF2="ts12">
+                <ANNOTATION_VALUE>I ended up going down</ANNOTATION_VALUE>
+            </ALIGNABLE_ANNOTATION>
+        </ANNOTATION>
+        <ANNOTATION>
+            <ALIGNABLE_ANNOTATION ANNOTATION_ID="a7"
+                TIME_SLOT_REF1="ts13" TIME_SLOT_REF2="ts14">
+                <ANNOTATION_VALUE>what was it, a week before I think just to help get big help Dad do big stuff. And</ANNOTATION_VALUE>
+            </ALIGNABLE_ANNOTATION>
+        </ANNOTATION>
+        <ANNOTATION>
+            <ALIGNABLE_ANNOTATION ANNOTATION_ID="a8"
+                TIME_SLOT_REF1="ts15" TIME_SLOT_REF2="ts16">
+                <ANNOTATION_VALUE>they were planning to defend, to stay and defend Dad-</ANNOTATION_VALUE>
+            </ALIGNABLE_ANNOTATION>
+        </ANNOTATION>
+        <ANNOTATION>
+            <ALIGNABLE_ANNOTATION ANNOTATION_ID="a9"
+                TIME_SLOT_REF1="ts17" TIME_SLOT_REF2="ts18">
+                <ANNOTATION_VALUE>said oh yeah, we'll be fine, you know, it'll probably just go past us and</ANNOTATION_VALUE>
+            </ALIGNABLE_ANNOTATION>
+        </ANNOTATION>
+        <ANNOTATION>
+            <ALIGNABLE_ANNOTATION ANNOTATION_ID="a10"
+                TIME_SLOT_REF1="ts19" TIME_SLOT_REF2="ts20">
+                <ANNOTATION_VALUE>all of that. And then the RFS came down the L- Araluen guys and</ANNOTATION_VALUE>
+            </ALIGNABLE_ANNOTATION>
+        </ANNOTATION>
+        <ANNOTATION>
+            <ALIGNABLE_ANNOTATION ANNOTATION_ID="a11"
+                TIME_SLOT_REF1="ts21" TIME_SLOT_REF2="ts22">
+                <ANNOTATION_VALUE>basically just said you need to leave 'cause it was coming from both angles. We had the Deua River fire and the</ANNOTATION_VALUE>
+            </ALIGNABLE_ANNOTATION>
+        </ANNOTATION>
+        <ANNOTATION>
+            <ALIGNABLE_ANNOTATION ANNOTATION_ID="a12"
+                TIME_SLOT_REF1="ts23" TIME_SLOT_REF2="ts24">
+                <ANNOTATION_VALUE>um other one coming down the hill so we were kind of in the middle of the two</ANNOTATION_VALUE>
+            </ALIGNABLE_ANNOTATION>
+        </ANNOTATION>
+        <ANNOTATION>
+            <ALIGNABLE_ANNOTATION ANNOTATION_ID="a13"
+                TIME_SLOT_REF1="ts25" TIME_SLOT_REF2="ts26">
+                <ANNOTATION_VALUE>and just not knowing which direction it would actually hit us from.</ANNOTATION_VALUE>
+            </ALIGNABLE_ANNOTATION>
+        </ANNOTATION>
+        <ANNOTATION>
+            <ALIGNABLE_ANNOTATION ANNOTATION_ID="a14"
+                TIME_SLOT_REF1="ts27" TIME_SLOT_REF2="ts28">
+                <ANNOTATION_VALUE>They said you need to get out. Like you need to pack up and</ANNOTATION_VALUE>
+            </ALIGNABLE_ANNOTATION>
+        </ANNOTATION>
+        <ANNOTATION>
+            <ALIGNABLE_ANNOTATION ANNOTATION_ID="a15"
+                TIME_SLOT_REF1="ts29" TIME_SLOT_REF2="ts30">
+                <ANNOTATION_VALUE>not stay and defend 'cause Dad's knees were gone. Mum's back was gone. </ANNOTATION_VALUE>
+            </ALIGNABLE_ANNOTATION>
+        </ANNOTATION>
+        <ANNOTATION>
+            <ALIGNABLE_ANNOTATION ANNOTATION_ID="a16"
+                TIME_SLOT_REF1="ts31" TIME_SLOT_REF2="ts32">
+                <ANNOTATION_VALUE>Dad wanted to stay and defend. I went, well, if Dad wants to stay, then I'm gonna have to help him. And then Mum was like, well, if you're gonna stay, I'm gonna stay.</ANNOTATION_VALUE>
+            </ALIGNABLE_ANNOTATION>
+        </ANNOTATION>
+        <ANNOTATION>
+            <ALIGNABLE_ANNOTATION ANNOTATION_ID="a17"
+                TIME_SLOT_REF1="ts33" TIME_SLOT_REF2="ts34">
+                <ANNOTATION_VALUE>[laughter]</ANNOTATION_VALUE>
+            </ALIGNABLE_ANNOTATION>
+        </ANNOTATION>
+        <ANNOTATION>
+            <ALIGNABLE_ANNOTATION ANNOTATION_ID="a18"
+                TIME_SLOT_REF1="ts35" TIME_SLOT_REF2="ts36">
+                <ANNOTATION_VALUE>So it just turned into this whole</ANNOTATION_VALUE>
+            </ALIGNABLE_ANNOTATION>
+        </ANNOTATION>
+        <ANNOTATION>
+            <ALIGNABLE_ANNOTATION ANNOTATION_ID="a19"
+                TIME_SLOT_REF1="ts37" TIME_SLOT_REF2="ts38">
+                <ANNOTATION_VALUE>thing of</ANNOTATION_VALUE>
+            </ALIGNABLE_ANNOTATION>
+        </ANNOTATION>
+        <ANNOTATION>
+            <ALIGNABLE_ANNOTATION ANNOTATION_ID="a20"
+                TIME_SLOT_REF1="ts39" TIME_SLOT_REF2="ts40">
+                <ANNOTATION_VALUE>do you or don't you?</ANNOTATION_VALUE>
+            </ALIGNABLE_ANNOTATION>
+        </ANNOTATION>
+        <ANNOTATION>
+            <ALIGNABLE_ANNOTATION ANNOTATION_ID="a21"
+                TIME_SLOT_REF1="ts41" TIME_SLOT_REF2="ts42">
+                <ANNOTATION_VALUE>And then when the RFS came down and said, nup,</ANNOTATION_VALUE>
+            </ALIGNABLE_ANNOTATION>
+        </ANNOTATION>
+        <ANNOTATION>
+            <ALIGNABLE_ANNOTATION ANNOTATION_ID="a22"
+                TIME_SLOT_REF1="ts43" TIME_SLOT_REF2="ts44">
+                <ANNOTATION_VALUE>we recommend that you go,</ANNOTATION_VALUE>
+            </ALIGNABLE_ANNOTATION>
+        </ANNOTATION>
+        <ANNOTATION>
+            <ALIGNABLE_ANNOTATION ANNOTATION_ID="a23"
+                TIME_SLOT_REF1="ts45" TIME_SLOT_REF2="ts46">
+                <ANNOTATION_VALUE>Um,</ANNOTATION_VALUE>
+            </ALIGNABLE_ANNOTATION>
+        </ANNOTATION>
+        <ANNOTATION>
+            <ALIGNABLE_ANNOTATION ANNOTATION_ID="a24"
+                TIME_SLOT_REF1="ts47" TIME_SLOT_REF2="ts48">
+                <ANNOTATION_VALUE>yeah, we kind of had planned to pack everything up on. I think it was Thursday</ANNOTATION_VALUE>
+            </ALIGNABLE_ANNOTATION>
+        </ANNOTATION>
+        <ANNOTATION>
+            <ALIGNABLE_ANNOTATION ANNOTATION_ID="a25"
+                TIME_SLOT_REF1="ts49" TIME_SLOT_REF2="ts50">
+                <ANNOTATION_VALUE>I think it was a Thursday anyway, I can't remember what day. </ANNOTATION_VALUE>
+            </ALIGNABLE_ANNOTATION>
+        </ANNOTATION>
+        <ANNOTATION>
+            <ALIGNABLE_ANNOTATION ANNOTATION_ID="a26"
+                TIME_SLOT_REF1="ts51" TIME_SLOT_REF2="ts52">
+                <ANNOTATION_VALUE>So we'd planned to, yeah, my brother was gonna come down and from Canberra and we were gonna,</ANNOTATION_VALUE>
+            </ALIGNABLE_ANNOTATION>
+        </ANNOTATION>
+        <ANNOTATION>
+            <ALIGNABLE_ANNOTATION ANNOTATION_ID="a27"
+                TIME_SLOT_REF1="ts53" TIME_SLOT_REF2="ts54">
+                <ANNOTATION_VALUE>you know, pack up, get everything out, bring it all up to my house in town and then</ANNOTATION_VALUE>
+            </ALIGNABLE_ANNOTATION>
+        </ANNOTATION>
+        <ANNOTATION>
+            <ALIGNABLE_ANNOTATION ANNOTATION_ID="a28"
+                TIME_SLOT_REF1="ts55" TIME_SLOT_REF2="ts56">
+                <ANNOTATION_VALUE>still go back down and check on the horses and the chickens and stuff and put sprin- we put sprinklers on the house and</ANNOTATION_VALUE>
+            </ALIGNABLE_ANNOTATION>
+        </ANNOTATION>
+        <ANNOTATION>
+            <ALIGNABLE_ANNOTATION ANNOTATION_ID="a29"
+                TIME_SLOT_REF1="ts57" TIME_SLOT_REF2="ts58">
+                <ANNOTATION_VALUE>all of that, got it all sort of did what we could cleaned up around the sheds, put Sisalation all around the house</ANNOTATION_VALUE>
+            </ALIGNABLE_ANNOTATION>
+        </ANNOTATION>
+        <ANNOTATION>
+            <ALIGNABLE_ANNOTATION ANNOTATION_ID="a30"
+                TIME_SLOT_REF1="ts59" TIME_SLOT_REF2="ts60">
+                <ANNOTATION_VALUE>and just did as much as we could possibly do</ANNOTATION_VALUE>
+            </ALIGNABLE_ANNOTATION>
+        </ANNOTATION>
+        <ANNOTATION>
+            <ALIGNABLE_ANNOTATION ANNOTATION_ID="a31"
+                TIME_SLOT_REF1="ts61" TIME_SLOT_REF2="ts62">
+                <ANNOTATION_VALUE>to sort of protect it.</ANNOTATION_VALUE>
+            </ALIGNABLE_ANNOTATION>
+        </ANNOTATION>
+        <ANNOTATION>
+            <ALIGNABLE_ANNOTATION ANNOTATION_ID="a32"
+                TIME_SLOT_REF1="ts63" TIME_SLOT_REF2="ts64">
+                <ANNOTATION_VALUE>And then</ANNOTATION_VALUE>
+            </ALIGNABLE_ANNOTATION>
+        </ANNOTATION>
+        <ANNOTATION>
+            <ALIGNABLE_ANNOTATION ANNOTATION_ID="a33"
+                TIME_SLOT_REF1="ts65" TIME_SLOT_REF2="ts66">
+                <ANNOTATION_VALUE>yeah, one of the Araluen guys came down at two o'clock in the morning</ANNOTATION_VALUE>
+            </ALIGNABLE_ANNOTATION>
+        </ANNOTATION>
+        <ANNOTATION>
+            <ALIGNABLE_ANNOTATION ANNOTATION_ID="a34"
+                TIME_SLOT_REF1="ts67" TIME_SLOT_REF2="ts68">
+                <ANNOTATION_VALUE>the day before we were sort of gonna</ANNOTATION_VALUE>
+            </ALIGNABLE_ANNOTATION>
+        </ANNOTATION>
+        <ANNOTATION>
+            <ALIGNABLE_ANNOTATION ANNOTATION_ID="a35"
+                TIME_SLOT_REF1="ts69" TIME_SLOT_REF2="ts70">
+                <ANNOTATION_VALUE>casually pack the cars up and get stuff out and said he could see it over the next valley from our top hill. So</ANNOTATION_VALUE>
+            </ALIGNABLE_ANNOTATION>
+        </ANNOTATION>
+        <ANNOTATION>
+            <ALIGNABLE_ANNOTATION ANNOTATION_ID="a36"
+                TIME_SLOT_REF1="ts71" TIME_SLOT_REF2="ts72">
+                <ANNOTATION_VALUE>one o'clock in the morning or whatever it was I rang my brother, and said we can see it, from the top hill.</ANNOTATION_VALUE>
+            </ALIGNABLE_ANNOTATION>
+        </ANNOTATION>
+        <ANNOTATION>
+            <ALIGNABLE_ANNOTATION ANNOTATION_ID="a37"
+                TIME_SLOT_REF1="ts73" TIME_SLOT_REF2="ts74">
+                <ANNOTATION_VALUE>And so he jumped in the car and raced down and we literally just packed up,</ANNOTATION_VALUE>
+            </ALIGNABLE_ANNOTATION>
+        </ANNOTATION>
+        <ANNOTATION>
+            <ALIGNABLE_ANNOTATION ANNOTATION_ID="a38"
+                TIME_SLOT_REF1="ts75" TIME_SLOT_REF2="ts76">
+                <ANNOTATION_VALUE>got everything we could, packed it all in the car and then Dad and I kept going do-. We went down morning and afternoon</ANNOTATION_VALUE>
+            </ALIGNABLE_ANNOTATION>
+        </ANNOTATION>
+        <ANNOTATION>
+            <ALIGNABLE_ANNOTATION ANNOTATION_ID="a39"
+                TIME_SLOT_REF1="ts77" TIME_SLOT_REF2="ts78">
+                <ANNOTATION_VALUE>for the two days after and we were down there the morning that it hit as well</ANNOTATION_VALUE>
+            </ALIGNABLE_ANNOTATION>
+        </ANNOTATION>
+        <ANNOTATION>
+            <ALIGNABLE_ANNOTATION ANNOTATION_ID="a40"
+                TIME_SLOT_REF1="ts79" TIME_SLOT_REF2="ts80">
+                <ANNOTATION_VALUE>and kind of just</ANNOTATION_VALUE>
+            </ALIGNABLE_ANNOTATION>
+        </ANNOTATION>
+        <ANNOTATION>
+            <ALIGNABLE_ANNOTATION ANNOTATION_ID="a41"
+                TIME_SLOT_REF1="ts81" TIME_SLOT_REF2="ts82">
+                <ANNOTATION_VALUE>getting any extra stuff that Mum would give us a little list, and go, oh, I forgot to get this and I forgot to get that and</ANNOTATION_VALUE>
+            </ALIGNABLE_ANNOTATION>
+        </ANNOTATION>
+        <ANNOTATION>
+            <ALIGNABLE_ANNOTATION ANNOTATION_ID="a42"
+                TIME_SLOT_REF1="ts83" TIME_SLOT_REF2="ts84">
+                <ANNOTATION_VALUE>yeah, and then</ANNOTATION_VALUE>
+            </ALIGNABLE_ANNOTATION>
+        </ANNOTATION>
+        <ANNOTATION>
+            <ALIGNABLE_ANNOTATION ANNOTATION_ID="a43"
+                TIME_SLOT_REF1="ts85" TIME_SLOT_REF2="ts86">
+                <ANNOTATION_VALUE>went down in the morning, put the sprinklers on and</ANNOTATION_VALUE>
+            </ALIGNABLE_ANNOTATION>
+        </ANNOTATION>
+        <ANNOTATION>
+            <ALIGNABLE_ANNOTATION ANNOTATION_ID="a44"
+                TIME_SLOT_REF1="ts87" TIME_SLOT_REF2="ts88">
+                <ANNOTATION_VALUE>hit that afternoon. So.</ANNOTATION_VALUE>
+            </ALIGNABLE_ANNOTATION>
+        </ANNOTATION>
+        <ANNOTATION>
+            <ALIGNABLE_ANNOTATION ANNOTATION_ID="a45"
+                TIME_SLOT_REF1="ts89" TIME_SLOT_REF2="ts90">
+                <ANNOTATION_VALUE>yeah</ANNOTATION_VALUE>
+            </ALIGNABLE_ANNOTATION>
+        </ANNOTATION>
+        <ANNOTATION>
+            <ALIGNABLE_ANNOTATION ANNOTATION_ID="a46"
+                TIME_SLOT_REF1="ts91" TIME_SLOT_REF2="ts92">
+                <ANNOTATION_VALUE>full on. Like it was hard,</ANNOTATION_VALUE>
+            </ALIGNABLE_ANNOTATION>
+        </ANNOTATION>
+        <ANNOTATION>
+            <ALIGNABLE_ANNOTATION ANNOTATION_ID="a47"
+                TIME_SLOT_REF1="ts93" TIME_SLOT_REF2="ts94">
+                <ANNOTATION_VALUE>but I don't know, I'm-</ANNOTATION_VALUE>
+            </ALIGNABLE_ANNOTATION>
+        </ANNOTATION>
+        <ANNOTATION>
+            <ALIGNABLE_ANNOTATION ANNOTATION_ID="a48"
+                TIME_SLOT_REF1="ts95" TIME_SLOT_REF2="ts96">
+                <ANNOTATION_VALUE>I'm pretty z- pretty positive person. I kind of just go, well, what do you do? Like, it is what it is </ANNOTATION_VALUE>
+            </ALIGNABLE_ANNOTATION>
+        </ANNOTATION>
+        <ANNOTATION>
+            <ALIGNABLE_ANNOTATION ANNOTATION_ID="a49"
+                TIME_SLOT_REF1="ts97" TIME_SLOT_REF2="ts98">
+                <ANNOTATION_VALUE>and as devastating as it is, it's happened and there's not much you can do about it</ANNOTATION_VALUE>
+            </ALIGNABLE_ANNOTATION>
+        </ANNOTATION>
+        <ANNOTATION>
+            <ALIGNABLE_ANNOTATION ANNOTATION_ID="a50"
+                TIME_SLOT_REF1="ts99" TIME_SLOT_REF2="ts100">
+                <ANNOTATION_VALUE>and Mum's very posi-. Mum and Dad are positive as well. Mum's, she got all of her precious stuff out and</ANNOTATION_VALUE>
+            </ALIGNABLE_ANNOTATION>
+        </ANNOTATION>
+        <ANNOTATION>
+            <ALIGNABLE_ANNOTATION ANNOTATION_ID="a51"
+                TIME_SLOT_REF1="ts101" TIME_SLOT_REF2="ts102">
+                <ANNOTATION_VALUE>you know, the- like</ANNOTATION_VALUE>
+            </ALIGNABLE_ANNOTATION>
+        </ANNOTATION>
+        <ANNOTATION>
+            <ALIGNABLE_ANNOTATION ANNOTATION_ID="a52"
+                TIME_SLOT_REF1="ts103" TIME_SLOT_REF2="ts104">
+                <ANNOTATION_VALUE>Dad didn't get his drones out and</ANNOTATION_VALUE>
+            </ALIGNABLE_ANNOTATION>
+        </ANNOTATION>
+        <ANNOTATION>
+            <ALIGNABLE_ANNOTATION ANNOTATION_ID="a53"
+                TIME_SLOT_REF1="ts105" TIME_SLOT_REF2="ts106">
+                <ANNOTATION_VALUE>things like that. And he kept talking about that. It's like, well, you got out though Dad, you know? So that's the</ANNOTATION_VALUE>
+            </ALIGNABLE_ANNOTATION>
+        </ANNOTATION>
+        <ANNOTATION>
+            <ALIGNABLE_ANNOTATION ANNOTATION_ID="a54"
+                TIME_SLOT_REF1="ts107" TIME_SLOT_REF2="ts108">
+                <ANNOTATION_VALUE>that's the main thing. All these things that you've gone and bought and it's all just stuff, you know? At the end of the day, it's stuff and they're safe.</ANNOTATION_VALUE>
+            </ALIGNABLE_ANNOTATION>
+        </ANNOTATION>
+        <ANNOTATION>
+            <ALIGNABLE_ANNOTATION ANNOTATION_ID="a55"
+                TIME_SLOT_REF1="ts109" TIME_SLOT_REF2="ts110">
+                <ANNOTATION_VALUE>They got their precious things, the family history, all of that kind of stuff. That's irreplaceable out</ANNOTATION_VALUE>
+            </ALIGNABLE_ANNOTATION>
+        </ANNOTATION>
+        <ANNOTATION>
+            <ALIGNABLE_ANNOTATION ANNOTATION_ID="a56"
+                TIME_SLOT_REF1="ts111" TIME_SLOT_REF2="ts112">
+                <ANNOTATION_VALUE>and you kind of just</ANNOTATION_VALUE>
+            </ALIGNABLE_ANNOTATION>
+        </ANNOTATION>
+        <ANNOTATION>
+            <ALIGNABLE_ANNOTATION ANNOTATION_ID="a57"
+                TIME_SLOT_REF1="ts113" TIME_SLOT_REF2="ts114">
+                <ANNOTATION_VALUE>it is what it is. Mum's always Mum always sort of said you know we had forty great years down there</ANNOTATION_VALUE>
+            </ALIGNABLE_ANNOTATION>
+        </ANNOTATION>
+        <ANNOTATION>
+            <ALIGNABLE_ANNOTATION ANNOTATION_ID="a58"
+                TIME_SLOT_REF1="ts115" TIME_SLOT_REF2="ts116">
+                <ANNOTATION_VALUE>in the middle of the bush with no neighbours</ANNOTATION_VALUE>
+            </ALIGNABLE_ANNOTATION>
+        </ANNOTATION>
+        <ANNOTATION>
+            <ALIGNABLE_ANNOTATION ANNOTATION_ID="a59"
+                TIME_SLOT_REF1="ts117" TIME_SLOT_REF2="ts118">
+                <ANNOTATION_VALUE>living the dream</ANNOTATION_VALUE>
+            </ALIGNABLE_ANNOTATION>
+        </ANNOTATION>
+        <ANNOTATION>
+            <ALIGNABLE_ANNOTATION ANNOTATION_ID="a60"
+                TIME_SLOT_REF1="ts119" TIME_SLOT_REF2="ts120">
+                <ANNOTATION_VALUE>and</ANNOTATION_VALUE>
+            </ALIGNABLE_ANNOTATION>
+        </ANNOTATION>
+        <ANNOTATION>
+            <ALIGNABLE_ANNOTATION ANNOTATION_ID="a61"
+                TIME_SLOT_REF1="ts121" TIME_SLOT_REF2="ts122">
+                <ANNOTATION_VALUE>for the last forty years there's always been that threat of of fire could come through and that's the risk that you take living in the middle of the bush. So,</ANNOTATION_VALUE>
+            </ALIGNABLE_ANNOTATION>
+        </ANNOTATION>
+        <ANNOTATION>
+            <ALIGNABLE_ANNOTATION ANNOTATION_ID="a62"
+                TIME_SLOT_REF1="ts123" TIME_SLOT_REF2="ts124">
+                <ANNOTATION_VALUE>you know, it was either gonna happen or it wasn't and it did and</ANNOTATION_VALUE>
+            </ALIGNABLE_ANNOTATION>
+        </ANNOTATION>
+        <ANNOTATION>
+            <ALIGNABLE_ANNOTATION ANNOTATION_ID="a63"
+                TIME_SLOT_REF1="ts125" TIME_SLOT_REF2="ts126">
+                <ANNOTATION_VALUE>They had forty years. You know, we had a great childhood down there and</ANNOTATION_VALUE>
+            </ALIGNABLE_ANNOTATION>
+        </ANNOTATION>
+        <ANNOTATION>
+            <ALIGNABLE_ANNOTATION ANNOTATION_ID="a64"
+                TIME_SLOT_REF1="ts127" TIME_SLOT_REF2="ts128">
+                <ANNOTATION_VALUE>learning to drive tractors and, you know, all the fun stuff that you get to do on a farm. So</ANNOTATION_VALUE>
+            </ALIGNABLE_ANNOTATION>
+        </ANNOTATION>
+        <ANNOTATION>
+            <ALIGNABLE_ANNOTATION ANNOTATION_ID="a65"
+                TIME_SLOT_REF1="ts129" TIME_SLOT_REF2="ts130">
+                <ANNOTATION_VALUE>yeah,</ANNOTATION_VALUE>
+            </ALIGNABLE_ANNOTATION>
+        </ANNOTATION>
+        <ANNOTATION>
+            <ALIGNABLE_ANNOTATION ANNOTATION_ID="a66"
+                TIME_SLOT_REF1="ts131" TIME_SLOT_REF2="ts132">
+                <ANNOTATION_VALUE>is what it is. What do you do?</ANNOTATION_VALUE>
+            </ALIGNABLE_ANNOTATION>
+        </ANNOTATION>
+        <ANNOTATION>
+            <ALIGNABLE_ANNOTATION ANNOTATION_ID="a67"
+                TIME_SLOT_REF1="ts133" TIME_SLOT_REF2="ts134">
+                <ANNOTATION_VALUE>It's done.</ANNOTATION_VALUE>
+            </ALIGNABLE_ANNOTATION>
+        </ANNOTATION>
+    </TIER>
+    <TIER LINGUISTIC_TYPE_REF="NOTE_newtype" TIER_ID="NOTE"/>
+    <LINGUISTIC_TYPE GRAPHIC_REFERENCES="false"
+        LINGUISTIC_TYPE_ID="default-lt" TIME_ALIGNABLE="true"/>
+    <LINGUISTIC_TYPE GRAPHIC_REFERENCES="false"
+        LINGUISTIC_TYPE_ID="imported-sep" TIME_ALIGNABLE="true"/>
+    <LINGUISTIC_TYPE CONSTRAINTS="Symbolic_Association"
+        GRAPHIC_REFERENCES="false" LINGUISTIC_TYPE_ID="pseudo" TIME_ALIGNABLE="false"/>
+    <LINGUISTIC_TYPE GRAPHIC_REFERENCES="false"
+        LINGUISTIC_TYPE_ID="Pseudonym_independent" TIME_ALIGNABLE="true"/>
+    <LINGUISTIC_TYPE GRAPHIC_REFERENCES="false"
+        LINGUISTIC_TYPE_ID="NOTE_newtype" TIME_ALIGNABLE="true"/>
+    <CONSTRAINT
+        DESCRIPTION="Time subdivision of parent annotation's time interval, no time gaps allowed within this interval" STEREOTYPE="Time_Subdivision"/>
+    <CONSTRAINT
+        DESCRIPTION="Symbolic subdivision of a parent annotation. Annotations refering to the same parent are ordered" STEREOTYPE="Symbolic_Subdivision"/>
+    <CONSTRAINT DESCRIPTION="1-1 association with a parent annotation" STEREOTYPE="Symbolic_Association"/>
+    <CONSTRAINT
+        DESCRIPTION="Time alignable annotations within the parent annotation's time interval, gaps are allowed" STEREOTYPE="Included_In"/>
+</ANNOTATION_DOCUMENT>
