@@ -24,10 +24,11 @@ target_path = main_dir.joinpath("make_trace.pyz")
 # The temporary folder and everything in it are deleted automatically when
 # the `with` block ends, also if building fails
 with tempfile.TemporaryDirectory() as tmp:
-    # Copy the app, so that the source files are never changed ----
+    # Copy the app, so that the source files are never changed. Python's
+    # cache and hidden files and folders (e.g. editor settings) are left out
     staging_dir = Path(tmp).joinpath("make_trace")
     shutil.copytree(app_dir, staging_dir,
-                    ignore=shutil.ignore_patterns("__pycache__"))
+                    ignore=shutil.ignore_patterns("__pycache__", ".*"))
 
     # Embed HTML template into the copy ----
     # Compress and encode to ASCII text
