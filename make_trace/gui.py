@@ -296,40 +296,62 @@ def run_gui():
         messagebox.showinfo("TrACE is ready", message)
 
 
+    # Folder of the last file or folder chosen with a dialog. The files of a
+    # collection are usually kept together, so dialogs for empty fields
+    # start there instead of where make_trace was started (see
+    # dialog_start_dir())
+    browse_state = {"last_dir": None}
+
+    def dialog_start_dir(var):
+        """
+        Folder a file or folder dialog starts in: where the field's own path
+        is, else where the last choice was made, else the folder make_trace
+        was started in
+        """
+        value = var.get().strip()
+        if value:
+            path = Path(value)
+            if path.is_dir():
+                return path
+            if path.is_file():
+                return path.parent
+
+        last_dir = browse_state["last_dir"]
+        if last_dir is not None and last_dir.is_dir():
+            return last_dir
+
+        return Path.cwd()
+
+    def remember_choice(choice):
+        """
+        Remember where a choice was made, for the next dialog: the folder
+        that contains the chosen file or folder. For a folder, that is its
+        parent, which shows it together with the folders next to it (e.g.
+        "audio" next to "elan")
+        """
+        browse_state["last_dir"] = Path(choice).parent
+
     def browse_file(var, filetypes):
         """Select a file"""
-
-        cur_value = var.get()
-
-        if (cur_value and Path(cur_value).is_file()):
-            initial_dir = Path(cur_value).parent
-        else:
-            initial_dir = Path.cwd()
 
         choice = filedialog.askopenfilename(title="Select File",
                                             filetypes=filetypes +
                                                 [('All Files', '*.*')],
-                                            initialdir=initial_dir)
+                                            initialdir=dialog_start_dir(var))
 
         if choice:
             var.set(choice)
+            remember_choice(choice)
 
     def browse_folder(var):
         """Select a folder"""
 
-        cur_value = var.get()
-        if (cur_value and Path(cur_value).is_dir()):
-            initial_dir = Path(cur_value)
-        else:
-            initial_dir = Path.cwd()
-
-
         choice = filedialog.askdirectory(title="Select Folder",
-                                        initialdir=initial_dir
-                                        )
+                                         initialdir=dialog_start_dir(var))
 
         if choice:
             var.set(choice)
+            remember_choice(choice)
 
     # https://stackoverflow.com/questions/3221956/how-do-i-display-tooltips-in-tkinter
     class Tooltip:
