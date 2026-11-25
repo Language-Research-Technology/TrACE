@@ -44,7 +44,10 @@ def create_speakers_file(input_csv, output_js):
     logger.info("Generating speakers data...")
     logger.info(f"Speakers information: {input_csv}")
 
-    with open(Path(input_csv), mode='r', encoding='utf-8') as file:
+    # utf-8-sig skips the byte order mark which Excel adds to CSV files;
+    # otherwise it would stick to the name of the first column. The csv
+    # module needs newline="" to read line breaks inside cells correctly
+    with open(Path(input_csv), encoding="utf-8-sig", newline="") as file:
         speakers_dat = csv.DictReader(file)
         speakers_js = list(speakers_dat)
 
@@ -216,7 +219,8 @@ def create_transcripts_file(input_csv, output_js, elan_dir,
     logger.info(f"Recordings information: {input_csv}")
     logger.info(f"ELAN folder: {elan_dir}")
 
-    with open(Path(input_csv), mode='r', encoding='utf-8') as file:
+    # Read like the speakers CSV, see create_speakers_file()
+    with open(Path(input_csv), encoding="utf-8-sig", newline="") as file:
         recordings_info = list(csv.DictReader(file))
 
     transcripts_data = []
