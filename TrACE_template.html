@@ -335,6 +335,22 @@
             background-color: var(--background-color);
         }
 
+        /* The searched text inside these annotations: a more vivid version
+        of the color of the currently playing annotation, which is too pale
+        for a few highlighted letters. calc(c * 1.8) raises the saturation
+        (chroma), calc(l * 0.97) darkens it a little; the hue (h) stays.
+        Older browsers ignore the second line and use the plain color */
+        .query-match {
+            background-color: var(--ann-highlight-color);
+            background-color: oklch(from var(--ann-highlight-color)
+                                    calc(l * 0.97) calc(c * 1.8) h);
+            color: inherit;
+            font-weight: 600;
+            /* No padding, outline or border: matches are often inside a
+            word, and these would overlap or push apart its letters */
+            border-radius: 2px;
+        }
+
         /* "Show more" button after a batch of search results */
         .show-more-btn {
             display: block;
@@ -1812,13 +1828,14 @@
      * @returns {Element} The button
      */
     function createSearchResultButton(file, ann, highlightRegex) {
-        // For matches, escape HTML symbols and add higlight; for other text
-        // in the annotation, just escape HTML symbols. The i%2 checks whether
-        // we deal with an odd or even split index -- see the comment on
-        // highlightRegex in searchAnnotations()
+        // For matches, escape HTML symbols and mark them (<mark> is the HTML
+        // element for search matches; see .query-match in CSS); for other
+        // text in the annotation, just escape HTML symbols. The i%2 checks
+        // whether we deal with an odd or even split index -- see the comment
+        // on highlightRegex in searchAnnotations()
         const highlighted = ann.content.split(highlightRegex)
             .map((part, i) => i % 2
-                ? `<span class="highlight">${escapeHtml(part)}</span>`
+                ? `<mark class="query-match">${escapeHtml(part)}</mark>`
                 : escapeHtml(part))
             .join('');
 
