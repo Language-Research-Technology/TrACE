@@ -1053,6 +1053,11 @@
             return this.input.value.trim();
         }
 
+        // The text exactly as typed, with any spaces at the start and end
+        getRawValue() {
+            return this.input.value;
+        }
+
         // Helper method to safely fire the callback if it exists. Runs
         // immediately, and cancels any callback still waiting for the typing
         // delay (it would only repeat this one)
@@ -1723,7 +1728,12 @@
      * @param {String} value - search string
      */
     function searchAnnotations(value) {
-        const query = searchBox.getValue().toLowerCase();
+        // Matching ignores case, but is otherwise literal. Spaces at the
+        // start and end of the query are kept, so e.g. " cat " finds
+        // "the cat sat" but not "concatenate". Even a single space is a
+        // valid query: the number of results shown is limited anyway (see
+        // createRecordingResults())
+        const query = searchBox.getRawValue().toLowerCase();
         searchResults.innerHTML = '';
         if (!query) {
             // If the search box is empty, show file list again
