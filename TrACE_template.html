@@ -1531,6 +1531,22 @@
     }
 
     /**
+     * Escape text for use in a regular expression
+     *
+     * Puts a backslash before each character with a special meaning in
+     * regular expressions, so that the text is matched literally: e.g.
+     * "Mr. (laughs)" becomes "Mr\. \(laughs\)". In the replacement, "\\" is
+     * one backslash and $& is the matched character. Same as the built-in
+     * RegExp.escape(), which only browsers from 2025 on have.
+     *
+     * @param {String} text - plain text
+     * @returns {String} text with regular expression characters escaped
+     */
+    function escapeRegExp(text) {
+        return String(text).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    }
+
+    /**
      * Find transcript by the recording's name 
      *
      * @param {String} recordingName - Name of the recording as displayed on 
@@ -1745,7 +1761,7 @@
             // Exactly one capture group, so split() alternates [text, match,
             // text, ..., text]: matches are at odd indices. Built once per
             // search
-            const highlightRegex = new RegExp(`(${RegExp.escape(query)})`, 'gi');
+            const highlightRegex = new RegExp(`(${escapeRegExp(query)})`, 'gi');
 
             // Results are collected off-page and added to the page in one
             // step, which is much faster than adding them one by one
